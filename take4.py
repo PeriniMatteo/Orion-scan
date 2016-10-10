@@ -132,7 +132,7 @@ class TakeDialog(tkinter.Toplevel):
         self.btn_take.grid(column=0,columnspan=6,row=11, sticky='NSWE')
         
         self.table=tkinter.IntVar()
-        self.cb_rolling = tkinter.Checkbutton(self,text=u"Enable Rolling Table",variable=self.table)
+        self.cb_rolling = tkinter.Checkbutton(self,text=u"Enable Turning Table",variable=self.table)
         self.cb_rolling.grid(column=0,row=2,columnspan=2,sticky='W')
         self.camera1=tkinter.IntVar()
         self.cb_camera1 = tkinter.Checkbutton(self,text=u"Enable Camera1",variable=self.camera1)
@@ -157,7 +157,7 @@ class TakeDialog(tkinter.Toplevel):
         filemenu.add_command(label="Open", command=self.hello)
         filemenu.add_command(label="Save", command=self.hello)
         filemenu.add_separator()
-        filemenu.add_command(label="Exit", command=self.q)
+        filemenu.add_command(label="Return to main window", command=self.q)
         menubar.add_cascade(label="File", menu=filemenu)
         
         # create more pulldown menus
@@ -165,10 +165,10 @@ class TakeDialog(tkinter.Toplevel):
         editmenu.add_command(label="Cut", command=self.hello)
         editmenu.add_command(label="Copy", command=self.hello)
         editmenu.add_command(label="Paste", command=self.hello)
-        menubar.add_cascade(label="Edit", menu=editmenu)
+        menubar.add_cascade(label="Utility", menu=editmenu)
         
         helpmenu = tkinter.Menu(menubar, tearoff=0)
-        helpmenu.add_command(label="About", command=self.hello)
+        helpmenu.add_command(label="About", command=self.about)
         menubar.add_cascade(label="Help", menu=helpmenu)
         
         # display the menu
@@ -211,9 +211,12 @@ class TakeDialog(tkinter.Toplevel):
         self.combo2.bind("<<ComboboxSelected>>", self.newselection_shot)
         #self.combo2.bind("<<postcommand>>", self.get_serial_int)
         ##serial
+        self.option_add("*Dialog.msg.wrapLength", "10i") #### to enlarge the tkMessageBox dialog windows  
         
     def hello(self):
         print('Hello!!')
+    def about(self):
+        tkinter.messagebox.showinfo("About", "Rosario is a open-source project under GPL licence.\nFor more details please visit:\nhttps://github.com/PeriniMatteo/Rosario")
     def check_pattern_dir(self):
         print('check_pattern_dir')
         #self.pattern_dir='~'
