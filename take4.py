@@ -12,7 +12,7 @@ import serial.tools.list_ports
 import time
 import multiprocessing
 import cv2
-from proj import ProjectorDialog
+#from proj import ProjectorDialog
 from pathlib import Path
 
 class ProcessWindow(tkinter.Toplevel):
@@ -150,6 +150,33 @@ class TakeDialog(tkinter.Toplevel):
         self.cb_proj = tkinter.Checkbutton(self,text=u"Enable Projector",variable=self.proj,command=self.open_win_proj)
         self.cb_proj.grid(column=0,row=10,columnspan=2,sticky='W')
 
+        menubar = tkinter.Menu(self)
+    
+        # create a pulldown menu, and add it to the menu bar
+        filemenu = tkinter.Menu(menubar, tearoff=0)
+        filemenu.add_command(label="Open", command=self.hello)
+        filemenu.add_command(label="Save", command=self.hello)
+        filemenu.add_separator()
+        filemenu.add_command(label="Exit", command=self.q)
+        menubar.add_cascade(label="File", menu=filemenu)
+        
+        # create more pulldown menus
+        editmenu = tkinter.Menu(menubar, tearoff=0)
+        editmenu.add_command(label="Cut", command=self.hello)
+        editmenu.add_command(label="Copy", command=self.hello)
+        editmenu.add_command(label="Paste", command=self.hello)
+        menubar.add_cascade(label="Edit", menu=editmenu)
+        
+        helpmenu = tkinter.Menu(menubar, tearoff=0)
+        helpmenu.add_command(label="About", command=self.hello)
+        menubar.add_cascade(label="Help", menu=helpmenu)
+        
+        # display the menu
+        self.config(menu=menubar)
+        
+        
+        
+        
         
         for i in range(12):
             self.grid_columnconfigure(i,weight=1)
@@ -184,6 +211,9 @@ class TakeDialog(tkinter.Toplevel):
         self.combo2.bind("<<ComboboxSelected>>", self.newselection_shot)
         #self.combo2.bind("<<postcommand>>", self.get_serial_int)
         ##serial
+        
+    def hello(self):
+        print('Hello!!')
     def check_pattern_dir(self):
         print('check_pattern_dir')
         #self.pattern_dir='~'
