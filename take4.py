@@ -6,6 +6,7 @@ import tkinter
 from tkinter import ttk
 from tkinter import messagebox
 from tkinter import filedialog
+from tkinter import simpledialog
 import serial
 import serial.tools.list_ports
 #import threading
@@ -14,6 +15,224 @@ import multiprocessing
 import cv2
 #from proj import ProjectorDialog
 from pathlib import Path
+import re
+class Ask_Device_Name_Dialog(simpledialog.Dialog):
+
+    def __init__(self, parent,d_dict,sn):
+
+        tkinter.Toplevel.__init__(self, parent)
+        self.transient(parent)
+        self.dev_dict=d_dict
+        #self.sn=sn
+        self.title('Choose a name for your new device!')
+        self.transient(parent)
+        self.parent = parent
+    
+        tkinter.Label(self, text="SN:").grid(row=0)
+        tkinter.Label(self, text="Name:").grid(row=1)
+        self.grid_columnconfigure(0,weight=1)
+        print('sn === '+sn)
+        self.e1_text = tkinter.StringVar()
+        self.e1_text.set(str(sn))
+        #self.e1 = tkinter.Entry(self,textvariable=str(sn), state=tkinter.DISABLED)
+        self.e1 = tkinter.Entry(self,textvariable=self.e1_text)
+        self.e1.config(state=tkinter.DISABLED)
+        #self.e1
+        self.e2 = tkinter.Entry(self)
+    
+        self.e1.grid(row=0, column=1)
+        self.e2.grid(row=1, column=1)
+        self.e2.bind("<Return>", self.return_pressed)
+        #return self.e1 # initial focus
+        self.ok_button = ttk.Button(self, text="OK", command=self.ok)
+        self.ok_button.grid(row=2, column=0,columnspan=2, sticky='NSWE')
+        self.minsize(300,10)
+        self.grab_set()
+        self.focus_set()
+        self.wait_window(self)
+    
+    def return_pressed(self,event):
+        self.ok()
+        
+    def ok(self):
+        first = self.e1.get()
+        second = self.e2.get()
+        self.dev_dict[str(first)]=str(second)
+        
+        #print first, second
+        print('self.dev_dict in Ask_Device_Name_Dialog')
+        print(self.dev_dict)
+        New_Device_Dialog.dev_dict=self.dev_dict
+        print('self.dev_dict in New_Device_Dialog')
+        print(New_Device_Dialog.dev_dict)
+        self.parent.focus_set()
+        self.destroy()
+        
+
+class New_Device_Dialog(tkinter.Toplevel):
+
+    def __init__(self, parent):
+
+        tkinter.Toplevel.__init__(self, parent)
+        self.transient(parent)
+
+        self.title('Select a new device')
+        #self.sn=''
+        self.parent = parent
+        self.fff=0
+        self.result = None
+        self.grid_columnconfigure(0,weight=1)
+        self.grid_rowconfigure(0,weight=1)
+        self.grid_rowconfigure(1,weight=1)
+        self.grid_rowconfigure(2,weight=1)
+        self.detect_button = ttk.Button(self, text="Detect a new device", command=self.detect, default=tkinter.ACTIVE)
+        self.detect_button.grid(row=0, column=0, sticky='NSWE')
+        self.add_button = ttk.Button(self, text="Add to know devices", command=self.add, state=tkinter.DISABLED)
+        self.add_button.grid(row=1, column=0, sticky='NSWE')
+        self.remove_button = ttk.Button(self, text="Remove a device", command=self.remove)
+        self.remove_button.grid(row=2, column=0, sticky='NSWE')
+        self.exit_button = ttk.Button(self, text="Cancel", command=self.cancel)
+        self.exit_button.grid(row=3, column=0, sticky='NSWE')
+        
+
+
+        self.grab_set()
+
+
+        
+
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+        self.focus_set()
+        self.wait_window(self)
+    def remove(self):
+        #if not self.fff:
+        #    self.fff=0
+        print('remove')
+        #self.fff+=1
+        #print(self.fff)
+        #self.add_button.config(state=tkinter.ACTIVE)
+        pass
+
+    def cancel(self, event=None):
+        # put focus back to the parent window
+        #print(self.fff)
+        self.parent.focus_set()
+        self.destroy()
+    def read_devices_list(self):
+        try:
+            f=open('devices.txt','r')
+            dev_dict={item.split()[0] : item.split()[1] for item in f.readlines()}
+            f.close()
+            return dev_dict
+        except:
+            return None
+    def get_sn(self,port):
+        self.port=port
+        p = re.compile('S..=\w+')
+        self.sn=p.findall(self.port[2])[0][4:]
+        print('sn = '+self.sn)
+        
+    def check_port_in_dict(self,port,dev_dict):
+        self.port=port
+        self.dev_dict=dev_dict
+        self.get_sn(self.port)
+        if self.sn in self.dev_dict:
+            return True
+        else:
+            return False
+        
+    def write_devices_list(self,dev_dict):
+        self.dev_dict=dev_dict
+        f=open('devices.txt','w')
+        for d in dev_dict.keys():
+            f.write(str(d)+' '+str(dev_dict[d])+'\n')
+        f.close()
+        self.add_button.config(state=tkinter.DISABLED)
+            
+    def detect(self):
+        print('detect')
+        self.dev_dict=None
+        self.ports = list(serial.tools.list_ports.comports())
+        if self.ports==[]:
+            print('no devices detected')
+            if messagebox.askretrycancel("Warning!","Can't recognize any device!\n Connect a valid device and retry."):
+                self.detect()
+            
+        else:
+            print('new device detected')
+            self.dev_dict=self.read_devices_list()
+            print(self.dev_dict)
+            if self.dev_dict:
+                new=None
+                txt=''
+                for dev in self.ports:
+                    txt+='Device already in use:\n'
+                    if self.check_port_in_dict(dev,self.dev_dict):
+                        #print('esiste')
+                        #messagebox.showinfo('Device #'+self.sn, 'Device:'+self.dev_dict[self.sn]+' is already in your list')
+                        #pass
+                        txt+='ID #'+self.sn+'   Name:'+self.dev_dict[self.sn]+'\n\n'
+                    else:
+                        new=True
+                        txt+='New device found:\n'
+                        txt+='ID #'+self.sn
+                        #print('aggiungiamo?')
+                        #self.add_button.config(state=tkinter.ACTIVE)
+                if new:
+                    txt+='\nUse the "Add to know devices" button to put it in your list.\n'
+                else
+                    txt+='\nNo Unknow device found!'
+                messagebox.showinfo('New device found!', txt)
+                        
+            else:
+                print('aggiungiamo nuovo?')
+                self.add_button.config(state=tkinter.ACTIVE)
+                txt='\nUse the "Add to know devices" button to put it in your list.\n'
+                messagebox.showinfo('Unknow device found!', txt)
+                #messagebox.showinfo('New device found!', 'Use the "Add to know devices" button to put it in your list.')
+                #Ask_Device_Name_Dialog(self.dev_dict,sn)
+                
+
+    def add(self):
+        print('add')
+        #print(self.dev_dict)
+        #p = re.compile('S..=\w+')
+        if self.dev_dict:
+            for dev in self.ports:
+                if self.check_port_in_dict(dev,self.dev_dict):
+                    messagebox.showinfo('', 'Device '+self.sn+' is already in your list.')
+                else:
+                    if messagebox.askyesno('New device found!', self.sn+'Found!\nDo you want to add this serial device to your system?'):
+                        print(self.dev_dict)
+                        Ask_Device_Name_Dialog(self,self.dev_dict,self.sn)
+                        print(self.dev_dict)
+                        print('siiiiiiiiiiiiiiiiiii')
+                        self.write_devices_list(self.dev_dict)
+        else:
+            #self.ports
+            self.dev_dict={}
+            self.get_sn(self.ports[0])
+            print('a')
+            print(self.dev_dict)
+            Ask_Device_Name_Dialog(self,self.dev_dict,self.sn)
+            print('b')
+            print(self.dev_dict)
+            print('soooooooooooooooo')
+            self.write_devices_list(self.dev_dict)
+            if len(self.ports)>1:
+                self.add()
+            
+                
+        #else:
+            #p = re.compile('S..=\w+')
+            #self.dev_dict={}
+            #for dev in ports:
+                #sn=p.findall(dev[2])[0][4:]
+                #if messagebox.askyesno('New device found!', 'Do you want to add this device to your system?'):
+                    #Ask_Device_Name_Dialog(self.dev_dict,sn)
+
 
 class ProcessWindow(tkinter.Toplevel):
     def __init__(self, parent, process, serial):
@@ -37,6 +256,7 @@ class ProcessWindow(tkinter.Toplevel):
         self.destroy()
         messagebox.showinfo(title="3D Scan Cancelled", message='Process was terminated from user')
         if messagebox.askyesno("Restore position?", "Come back to the 0 position?"):
+            self.serial.write("$1=1\r\n".encode('ascii'))
             self.serial.write("G0 Z0\r\n".encode('ascii'))
 
     def launch(self):
@@ -164,7 +384,7 @@ class TakeDialog(tkinter.Toplevel):
         editmenu = tkinter.Menu(menubar, tearoff=0)
         editmenu.add_command(label="Cut", command=self.hello)
         editmenu.add_command(label="Copy", command=self.hello)
-        editmenu.add_command(label="Paste", command=self.hello)
+        editmenu.add_command(label="Add a new Arduino", command=self.new_device)
         menubar.add_cascade(label="Utility", menu=editmenu)
         
         helpmenu = tkinter.Menu(menubar, tearoff=0)
@@ -217,6 +437,10 @@ class TakeDialog(tkinter.Toplevel):
         print('Hello!!')
     def about(self):
         tkinter.messagebox.showinfo("About", "Rosario is a open-source project under GPL licence.\nFor more details please visit:\nhttps://github.com/PeriniMatteo/Rosario")
+        
+    def new_device(self):
+        print('new device')
+        New_Device_Dialog(self)
     def check_pattern_dir(self):
         print('check_pattern_dir')
         #self.pattern_dir='~'
