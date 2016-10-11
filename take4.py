@@ -68,7 +68,92 @@ class Ask_Device_Name_Dialog(simpledialog.Dialog):
         self.parent.focus_set()
         self.destroy()
         
+class Remove_Device_Dialog(simpledialog.Dialog):
 
+    def __init__(self, parent):
+
+        tkinter.Toplevel.__init__(self, parent)
+        self.transient(parent)
+        self.dev_dict = self.read_devices_list()
+        #self.sn=sn
+        self.title('Remove a device!')
+        self.transient(parent)
+        self.parent = parent
+    
+        tkinter.Label(self, text="Device:").grid(row=0)
+        #tkinter.Label(self, text="Name:").grid(row=1)
+        self.grid_columnconfigure(0,weight=1)
+        self.grid_columnconfigure(1,weight=1)
+        
+        self.combo_txt = tkinter.StringVar()
+        self.combo_txt.set('not set!')
+        self.combo = tkinter.ttk.Combobox(self, textvariable=self.combo_txt, postcommand = self.get_values)
+        self.combo.grid(column=1,row=0, sticky='NSWE')
+        #self.combo1_value.set('not set!')
+        self.combo.bind("<<ComboboxSelected>>", self.newselection)
+        
+        #self.names_combo_txt = tkinter.StringVar()
+        #self.names_combo_txt.set('not set!')
+        #self.names_combo = tkinter.ttk.Combobox(self, textvariable=self.names_combo_txt, postcommand = self.get_values)
+        #self.names_combo.grid(column=1,row=0, sticky='W')
+        #self.combo1_value.set('not set!')
+        #self.names_combo.bind("<<ComboboxSelected>>", self.newselection_names)
+        
+        self.ok_button = ttk.Button(self, text="Remove", command=self.ok)
+        self.ok_button.grid(row=1, column=0,columnspan=2, sticky='NSWE')
+        self.quit_button = ttk.Button(self, text="Exit", command=self.qq)
+        self.quit_button.grid(row=2, column=0,columnspan=2, sticky='NSWE')
+        self.minsize(500,10)
+        self.grab_set()
+        self.focus_set()
+        self.wait_window(self)
+        
+        
+    def write_devices_list(self):
+        f=open('devices.txt','w')
+        for d in self.dev_dict.keys():
+            f.write(str(d)+' '+str(self.dev_dict[d])+'\n')
+        f.close()
+        
+    def read_devices_list(self):
+        try:
+            f=open('devices.txt','r')
+            dev_dict={item.split()[0] : ' '.join(item.split()[1:]) for item in f.readlines()}
+            f.close()
+            return dev_dict
+        except:
+            return None
+        
+    def get_values(self):
+        self.combo['values'] = [str(nn)+'  '+str(self.dev_dict[nn]) for nn in self.dev_dict]
+        #pass
+    def newselection(self,evt):
+        val = self.combo.get()
+        self.sn = val.split()[0]
+        self.name = self.dev_dict[self.sn]
+        
+        
+    #def return_pressed(self,event):
+    #    self.ok()
+        
+    def ok(self):
+        self.dev_dict.pop(self.sn)
+        self.write_devices_list()
+        if self.dev_dict=={}:
+            messagebox.showinfo('Warning', "There aren't other devices to remove!")
+            self.parent.focus_set()
+            self.destroy()
+            #New_Device_Dialog()
+        else:
+            self.combo_txt.set('Select a device!')
+            self.dev_dict = self.read_devices_list()
+            self.get_values()
+        
+        
+    def qq(self):
+        self.parent.focus_set()
+        self.destroy()
+        
 class New_Device_Dialog(tkinter.Toplevel):
 
     def __init__(self, parent):
@@ -93,23 +178,37 @@ class New_Device_Dialog(tkinter.Toplevel):
         self.remove_button.grid(row=2, column=0, sticky='NSWE')
         self.exit_button = ttk.Button(self, text="Cancel", command=self.cancel)
         self.exit_button.grid(row=3, column=0, sticky='NSWE')
-        
+        def read_devices_list(self):
+            try:
+                f=open('devices.txt','r')
+                dev_dict={item.split()[0] : item.split()[1] for item in f.readlines()}
+                f.close()
+                return dev_dict
+            except:
+                return None
 
 
         self.grab_set()
-
-
-        
 
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
                                   parent.winfo_rooty()+50))
         self.focus_set()
         self.wait_window(self)
+        
+        
+        
+        
+        
     def remove(self):
         #if not self.fff:
         #    self.fff=0
         print('remove')
+        if self.read_devices_list():
+            Remove_Device_Dialog(self)
+        else:
+            messagebox.showinfo('Warning', "There aren't devices to remove!")
+            
         #self.fff+=1
         #print(self.fff)
         #self.add_button.config(state=tkinter.ACTIVE)
@@ -182,7 +281,8 @@ class New_Device_Dialog(tkinter.Toplevel):
                         #self.add_button.config(state=tkinter.ACTIVE)
                 if new:
                     txt+='\nUse the "Add to know devices" button to put it in your list.\n'
-                else
+                    self.add_button.config(state=tkinter.ACTIVE)
+                else:
                     txt+='\nNo Unknow device found!'
                 messagebox.showinfo('New device found!', txt)
                         
