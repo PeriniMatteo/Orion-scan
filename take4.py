@@ -523,7 +523,7 @@ class TakeDialog(tkinter.Toplevel):
         
         ##self.grid_rowconfigure(2,weight=1)
         ##self.resizable(True,False)
-        #self.update()
+        self.update()
         #self.geometry(self.geometry())
         #self.entry.focus_set()
         #self.entry.selection_range(0, tkinter.END)
@@ -537,7 +537,8 @@ class TakeDialog(tkinter.Toplevel):
         self.combo1.bind("<<ComboboxSelected>>", self.newselection_deg)
         #elf.combo1.bind("<<postcommand>>", self.get_serial_int)
         ##serial
-        
+        self.btn_check_serial_deg = tkinter.Button(self,text=u"Test serial!",command=lambda : self.test_serial(self.S_deg,0))
+        self.btn_check_serial_deg.grid(column=4,columnspan=1,row=3, sticky='NSWE')
         
         self.combo2_value = tkinter.StringVar()
         self.combo2_value.set('not set!')
@@ -546,9 +547,53 @@ class TakeDialog(tkinter.Toplevel):
         #self.combo2_value.set('not set!')
         self.combo2.bind("<<ComboboxSelected>>", self.newselection_shot)
         #self.combo2.bind("<<postcommand>>", self.get_serial_int)
+        self.btn_check_serial_shot = tkinter.Button(self,text=u"Test serial!",command=lambda : self.test_serial(self.S_shot,1))
+        self.btn_check_serial_shot.grid(column=4,columnspan=1,row=7, sticky='NSWE')
+        self.update()
+        
         ##serial
         self.option_add("*Dialog.msg.wrapLength", "10i") #### to enlarge the tkMessageBox dialog windows  
-        
+    
+    def test_serial(self, s_int,i=None):
+        txt=''
+        if s_int:
+            S=s_int
+            time.sleep(0.5)
+            try:
+                #self.read_serial(S)
+                S.flushInput()
+                S.flushOutput()
+                #time.sleep(0.5)
+                #S.write("$$\n".encode('ascii'))
+                S.write("$$\n$$\n$$\n".encode('ascii'))
+                time.sleep(0.5)
+                txt=self.read_serial(S)
+                #print(txt)
+                #time.sleep(0.5)
+                #txt+=self.read_serial(S)
+                print(txt)
+                #print(txt)
+            except:
+                tkinter.messagebox.showinfo("Except!", "This connection seems inactive or not properly set!",icon="warning")
+                pass
+            p = re.compile('\$101=\d{3}\..*')
+            if p.findall(txt)!=[]:
+                print('grbl')
+                if i==0:
+                    tkinter.messagebox.showinfo("Connection is fine!", "This connection seems to be perfect!")
+                else:
+                    tkinter.messagebox.showinfo("Connection is working!", "This device would be connected to the 'turning table' combobox!",icon="warning")
+            p = re.compile('\d+xak\d+')
+            if p.findall(txt)!=[]:
+                if i==1:
+                    tkinter.messagebox.showinfo("Connection is fine!", "This connection seems to be perfect!")
+                else:
+                    tkinter.messagebox.showinfo("Connection is working!", "This device would be connected to the 'turning table' combobox!",icon="warning")
+            if txt=='':
+                tkinter.messagebox.showinfo("Problem detected!", "This connection seems inactive or not properly set!",icon="warning")
+        else:
+            tkinter.messagebox.showinfo("Problem detected!", "This connection seems inactive or not properly set!",icon="warning")
+            
     def hello(self):
         print('Hello!!')
     def about(self):
