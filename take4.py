@@ -805,32 +805,25 @@ class TakeDialog(tkinter.Toplevel):
         if self.S_deg:
             print('dentro')
             
-            
-            if self.S_shot.port != new_int:
-                print('porta libera')
-                if self.S_deg.port != new_int:
-                    print('diverso da prima')
-                    #print(self.S_shot.port)
-                    #print(str(self.value_of_combo.split()[0]))
+            if self.S_shot:
+                if self.S_shot.port != new_int:
+                    print('porta libera')
                     self.disconnect_serial(self.S_deg)
-                    self.S_deg = self.connect_serial(self.S_deg,new_int,br)
+                    self.S_deg = self.connect_serial(self.S_deg,new_int,br,0)
                 else:
-                    self.disconnect_serial(self.S_shot)
-                    self.S_deg = self.connect_serial(self.S_deg,new_int,br)
-                #print('Now serial '+self.S_shot.port+' will be used to turn the table')
+                    print('porta occupata')
+                    if tkinter.messagebox.askyesno("Serial busy", "This serial interface is already reserved! Do you want to use it anyway?",icon="warning"):
+                        #print('cambio')
+                        self.disconnect_serial(self.S_shot)
+                        self.disconnect_serial(self.S_deg)
+                        self.S_deg = self.connect_serial(self.S_deg,new_int,br,0)
+                        self.combo2_value.set('not set!')
+                    else:
+                        self.combo1_value.set('not set!')
+                        pass
             else:
-                print('porta occupata')
-                #print(self.S_shot.port)
-                #print(str(self.value_of_combo.split()[0]))
-                if tkinter.messagebox.askyesno("Serial busy", "This serial interface is already reserved! Do you want to continue?",icon="warning"):
-                    #print('cambio')
-                    self.disconnect_serial(self.S_shot)
-                    self.disconnect_serial(self.S_deg)
-                    self.S_deg = self.connect_serial(self.S_deg,new_int,br)
-                    self.combo2_value.set('not set!')
-                else:
-                    self.combo1_value.set('not set!')
-                    pass
+                self.disconnect_serial(self.S_deg)
+                self.S_deg = self.connect_serial(self.S_deg,new_int,br,0)
         else:
             print('fuori')
             if self.S_shot:
@@ -838,22 +831,22 @@ class TakeDialog(tkinter.Toplevel):
                     print('porta occupata')
                     #print(self.S_shot.port)
                     #print(str(self.value_of_combo.split()[0]))
-                    if tkinter.messagebox.askyesno("Serial busy", "This serial interface is already reserved! Do you want to continue?",icon="warning"):
+                    if tkinter.messagebox.askyesno("Serial busy", "This serial interface is already reserved! Do you want to use it anyway?",icon="warning"):
                         #print('cambio')
                         self.disconnect_serial(self.S_deg)
                         self.disconnect_serial(self.S_shot)
-                        self.S_deg = self.connect_serial(self.S_deg,new_int,br)
+                        self.S_deg = self.connect_serial(self.S_deg,new_int,br,0)
                         self.combo2_value.set('not set!')
                     else:
                         #self.S_deg = self.connect_serial(self.S_deg,str(self.value_of_combo.split()[0]),br)
                         self.combo1_value.set('not set!')
                         pass
                 else:
-                    print('S_deg in teoria')
-                    self.S_deg = self.connect_serial(self.S_deg,new_int,br)
+                    #print('S_deg in teoria')
+                    self.S_deg = self.connect_serial(self.S_deg,new_int,br,0)
             else:
-                print('S_deg in teoria')
-                self.S_deg = self.connect_serial(self.S_deg,new_int,br)
+                #print('S_deg in teoria')
+                self.S_deg = self.connect_serial(self.S_deg,new_int,br,0)
             
     def newselection_shot(self,evt):
         print('newselection_shot')
@@ -871,56 +864,51 @@ class TakeDialog(tkinter.Toplevel):
         if self.S_shot:
             print('dentro')
             
-            
-            if self.S_deg.port != new_int:
-                print('porta libera')
-                if self.S_shot.port != new_int:
-                    print('diverso da prima')
-                    #print(self.S_deg.port)
-                    #print(str(self.value_of_combo.split()[0]))
-                    self.disconnect_serial(self.S_deg)
-                    self.S_shot = self.connect_serial(self.S_shot,new_int,br)
-                else:
-                    self.disconnect_serial(self.S_deg)
-                    self.S_deg = self.connect_serial(self.S_deg,new_int,br)
-                #print('Now serial '+self.S_deg.port+' will be used to turn the table')
-            else:
-                print('porta occupata')
-                #print(self.S_deg.port)
-                #print(str(self.value_of_combo.split()[0]))
-                if tkinter.messagebox.askyesno("Serial busy", "This serial interface is already reserved! Do you want to continue?",icon="warning"):
-                    #print('cambio')
+            if self.S_deg:
+                if self.S_deg.port != new_int:
+                    print('porta libera')
                     self.disconnect_serial(self.S_shot)
-                    self.disconnect_serial(self.S_deg)
-                    self.S_shot = self.connect_serial(self.S_shot,new_int,br)
-                    self.combo1_value.set('not set!')
+                    self.S_shot = self.connect_serial(self.S_shot,new_int,br,0)
+                    #print('Now serial '+self.S_deg.port+' will be used to turn the table')
                 else:
-                    self.combo2_value.set('not set!')
-                    pass
+                    print('porta occupata')
+                    if tkinter.messagebox.askyesno("Serial busy", "This serial interface is already reserved! Do you want to use it anyway?",icon="warning"):
+                        #print('cambio')
+                        self.disconnect_serial(self.S_shot)
+                        self.disconnect_serial(self.S_deg)
+                        self.S_shot = self.connect_serial(self.S_shot,new_int,br,1)
+                        self.combo1_value.set('not set!')
+            
+                    else:
+                        self.combo2_value.set('not set!')
+                        #pass
+            else:
+                self.disconnect_serial(self.S_shot)
+                self.S_shot = self.connect_serial(self.S_shot,new_int,br,0)
         else:
             print('fuori')
-            if self.S_deg != None:
+            if self.S_deg:
                 print('S_deg exist')
                 if self.S_deg.port == new_int:
                     print('porta occupata')
                     #print(self.S_shot.port)
                     #print(str(self.value_of_combo.split()[0]))
-                    if tkinter.messagebox.askyesno("Serial busy", "This serial interface is already reserved! Do you want to continue?",icon="warning"):
+                    if tkinter.messagebox.askyesno("Serial busy", "This serial interface is already reserved! Do you want to use it anyway?",icon="warning"):
                         #print('cambio')
                         self.disconnect_serial(self.S_shot)
                         self.disconnect_serial(self.S_deg)
-                        self.S_shot = self.connect_serial(self.S_shot,new_int,br)
+                        self.S_shot = self.connect_serial(self.S_shot,new_int,br,1)
                         self.combo1_value.set('not set!')
                     else:
                         #self.S_shot = self.connect_serial(self.S_shot,str(self.value_of_combo.split()[0]),br)
                         self.combo2_value.set('not set!')
-                        pass
+                        #pass
                 else:
-                    print('S_shot in teoria')
-                    self.S_shot = self.connect_serial(self.S_shot,new_int,br)
+                    #print('S_shot in teoria')
+                    self.S_shot = self.connect_serial(self.S_shot,new_int,br,1)
             else:
-                print('S_shot in teoria')
-                self.S_shot = self.connect_serial(self.S_shot,new_int,br)
+                #print('S_shot in teoria')
+                self.S_shot = self.connect_serial(self.S_shot,new_int,br,1)
         
     def disconnect_serial(self, serial_name):
         try:
@@ -928,7 +916,7 @@ class TakeDialog(tkinter.Toplevel):
         except:
             pass
         
-    def connect_serial(self, serial_name,s_int,br): #SERIAL INTERFACE , BAUDRATE
+    def connect_serial(self, serial_name,s_int,br,i=None): #SERIAL INTERFACE , BAUDRATE
         
         s = serial.Serial(s_int,br,timeout=0)
         s.close()
@@ -938,9 +926,9 @@ class TakeDialog(tkinter.Toplevel):
         s.flushInput()
         #print(serial_name)
         #print(self.S_deg)
-        if serial_name == self.S_deg:
+        if i==0:
             print('Now serial '+s_int+'@'+str(br)+' will be used to turn the table')
-        else:
+        elif i==1:
             print('Now serial '+s_int+'@'+str(br)+' will be used to manage cameras')
         return s
         
