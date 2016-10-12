@@ -156,7 +156,7 @@ class Remove_Device_Dialog(simpledialog.Dialog):
         
 class New_Device_Dialog(tkinter.Toplevel):
 
-    def __init__(self, parent):
+    def __init__(self, parent=None):
 
         tkinter.Toplevel.__init__(self, parent)
         self.transient(parent)
@@ -176,16 +176,8 @@ class New_Device_Dialog(tkinter.Toplevel):
         self.add_button.grid(row=1, column=0, sticky='NSWE')
         self.remove_button = ttk.Button(self, text="Remove a device", command=self.remove)
         self.remove_button.grid(row=2, column=0, sticky='NSWE')
-        self.exit_button = ttk.Button(self, text="Cancel", command=self.cancel)
+        self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
         self.exit_button.grid(row=3, column=0, sticky='NSWE')
-        def read_devices_list(self):
-            try:
-                f=open('devices.txt','r')
-                dev_dict={item.split()[0] : item.split()[1] for item in f.readlines()}
-                f.close()
-                return dev_dict
-            except:
-                return None
 
 
         self.grab_set()
@@ -222,7 +214,7 @@ class New_Device_Dialog(tkinter.Toplevel):
     def read_devices_list(self):
         try:
             f=open('devices.txt','r')
-            dev_dict={item.split()[0] : item.split()[1] for item in f.readlines()}
+            dev_dict={item.split()[0] : ' '.join(item.split()[1:]) for item in f.readlines()}
             f.close()
             return dev_dict
         except:
@@ -232,6 +224,7 @@ class New_Device_Dialog(tkinter.Toplevel):
         p = re.compile('S..=\w+')
         self.sn=p.findall(self.port[2])[0][4:]
         print('sn = '+self.sn)
+        return self.sn
         
     def check_port_in_dict(self,port,dev_dict):
         self.port=port
@@ -267,8 +260,9 @@ class New_Device_Dialog(tkinter.Toplevel):
                 new=None
                 txt=''
                 for dev in self.ports:
-                    txt+='Device already in use:\n'
+                    
                     if self.check_port_in_dict(dev,self.dev_dict):
+                        txt+='Device already in use:\n'
                         #print('esiste')
                         #messagebox.showinfo('Device #'+self.sn, 'Device:'+self.dev_dict[self.sn]+' is already in your list')
                         #pass
@@ -276,7 +270,7 @@ class New_Device_Dialog(tkinter.Toplevel):
                     else:
                         new=True
                         txt+='New device found:\n'
-                        txt+='ID #'+self.sn
+                        txt+='ID #'+self.sn+'\n\n'
                         #print('aggiungiamo?')
                         #self.add_button.config(state=tkinter.ACTIVE)
                 if new:
@@ -410,7 +404,29 @@ class TakeDialog(tkinter.Toplevel):
         self.parent.update()
         self.parent.deiconify()
         
-
+    def read_devices_list(self):
+        try:
+            f=open('devices.txt','r')
+            dev_dict={item.split()[0] : ' '.join(item.split()[1:]) for item in f.readlines()}
+            f.close()
+            return dev_dict
+        except:
+            return None
+    def get_sn(self,port):
+        #self.port=port
+        p = re.compile('S..=\w+')
+        sn=p.findall(port[2])[0][4:]
+        #print('sn = '+self.sn)
+        return sn
+        
+    def check_port_in_dict(self,port,dev_dict):
+        #self.port=port
+        #self.dev_dict=dev_dict
+        sn=self.get_sn(port)
+        if sn in dev_dict:
+            return True
+        else:
+            return False
         
     def initialize(self):
         self.grid()
@@ -585,14 +601,31 @@ class TakeDialog(tkinter.Toplevel):
     def get_serial_int(self):
         print('get')
         #print("get_ser_int")   
-        
-        self.ser_int = [{'port':str(port[0]), 'desc':str(port[1])} for port in serial.tools.list_ports.comports()]
+        devlist=self.read_devices_list()
+        self.ser_int = []
+        for port in serial.tools.list_ports.comports():
+            try:
+                sn = self.get_sn(port)
+                self.ser_int.append({'port':str(port[0]), 'dev':str(port[1]), 'sn':str(sn),'desc':str(devlist[sn])})
+            except:
+                self.ser_int.append({'port':str(port[0]), 'dev':str(port[1]), 'sn':str(sn)})
+        self.update_combos()
+        #return self.ser_int
+    
+    def update_combos(self):
         if self.ser_int == []:
             self.combo1_value.set('not set!')
             self.combo2_value.set('not set!')
         else:
-            self.combo1['values'] = ([port[0]+" - "+port[1] for port in serial.tools.list_ports.comports()])
-            self.combo2['values'] = ([port[0]+" - "+port[1] for port in serial.tools.list_ports.comports()])
+            #devlist=self.read_devices_list()
+             
+            #self.combo1['values'] = ([port[0]+" - "+port[1] for port in serial.tools.list_ports.comports() if not New_Device_Dialog.check_port_in_dict(port,devlist) else devlist[New_Device_Dialog.get_sn(port)]])
+            #self.combo1['values'] = ([port[0]+" - "+port[1] if not self.check_port_in_dict(port,devlist)  else devlist[self.get_sn(port)] for port in serial.tools.list_ports.comports()])
+            #self.combo2['values'] = ([port[0]+" - "+port[1] if not self.check_port_in_dict(port,devlist)  else devlist[self.get_sn(port)] for port in serial.tools.list_ports.comports()])
+            self.combo1['values'] = ([item['port']+" - "+item['dev'] if len(item)==3  else item['desc'] for item in self.ser_int])
+            self.combo2['values'] = ([item['port']+" - "+item['dev'] if len(item)==3  else item['desc'] for item in self.ser_int])
+            #self.combo2['values'] = ([port[0]+" - "+port[1] for port in serial.tools.list_ports.comports()])
+    
     def show_image(self, image):
         img = cv2.imread(image)
         cv2.startWindowThread()
@@ -738,28 +771,52 @@ class TakeDialog(tkinter.Toplevel):
         ##t.wm_title("Window 2")
         ##l = tk.Label(t, text="This is window 2")
         ##l.pack(side="top", fill="both", expand=True, padx=100, pady=100)
-           
+    #def get_serial_int_from_combo(self, combo_value):
+        #if combo_value[:8]=='/dev/tty':
+            #return combo_value.split()[0]
+        #else:
+            #devlist=self.read_devices_list()
+            #for k in devlist.keys:
+                #if devlist(k)==
+        #pass
+    def get_tty_name(self,combo_value):
+        if combo_value.split()[0][:8]=='/dev/tty':
+            return str(combo_value.split()[0])
+        else:
+            for i in self.ser_int:
+                if len(i)>3:
+                    if self.value_of_combo==i['desc']:
+                        return i['port']
+                
     def newselection_deg(self,evt):
         print('newselection_deg')
         br=self.br_deg
         self.value_of_combo = self.combo1.get()
-        self.combo1['values'] = ([port[0]+" - "+port[1] for port in serial.tools.list_ports.comports()])
-        self.ser_int = [{'port':str(port[0]), 'desc':str(port[1])} for port in serial.tools.list_ports.comports()]
+        
+        self.get_serial_int()
+        ################
+        new_int = self.get_tty_name(self.value_of_combo)
+        #print('###############################################')
+        print('new_int = '+new_int)
+        #print('###############################################')
+
+        #self.combo1['values'] = ([port[0]+" - "+port[1] for port in serial.tools.list_ports.comports()])
+        #self.ser_int = [{'port':str(port[0]), 'desc':str(port[1])} for port in serial.tools.list_ports.comports()]
         if self.S_deg:
             print('dentro')
             
             
-            if self.S_shot.port != str(self.value_of_combo.split()[0]):
+            if self.S_shot.port != new_int:
                 print('porta libera')
-                if self.S_deg.port != str(self.value_of_combo.split()[0]):
+                if self.S_deg.port != new_int:
                     print('diverso da prima')
                     #print(self.S_shot.port)
                     #print(str(self.value_of_combo.split()[0]))
                     self.disconnect_serial(self.S_deg)
-                    self.S_deg = self.connect_serial(self.S_deg,str(self.value_of_combo.split()[0]),br)
+                    self.S_deg = self.connect_serial(self.S_deg,new_int,br)
                 else:
                     self.disconnect_serial(self.S_shot)
-                    self.S_deg = self.connect_serial(self.S_deg,str(self.value_of_combo.split()[0]),br)
+                    self.S_deg = self.connect_serial(self.S_deg,new_int,br)
                 #print('Now serial '+self.S_shot.port+' will be used to turn the table')
             else:
                 print('porta occupata')
@@ -769,7 +826,7 @@ class TakeDialog(tkinter.Toplevel):
                     #print('cambio')
                     self.disconnect_serial(self.S_shot)
                     self.disconnect_serial(self.S_deg)
-                    self.S_deg = self.connect_serial(self.S_deg,str(self.value_of_combo.split()[0]),br)
+                    self.S_deg = self.connect_serial(self.S_deg,new_int,br)
                     self.combo2_value.set('not set!')
                 else:
                     self.combo1_value.set('not set!')
@@ -777,7 +834,7 @@ class TakeDialog(tkinter.Toplevel):
         else:
             print('fuori')
             if self.S_shot:
-                if self.S_shot.port == str(self.value_of_combo.split()[0]):
+                if self.S_shot.port == new_int:
                     print('porta occupata')
                     #print(self.S_shot.port)
                     #print(str(self.value_of_combo.split()[0]))
@@ -785,7 +842,7 @@ class TakeDialog(tkinter.Toplevel):
                         #print('cambio')
                         self.disconnect_serial(self.S_deg)
                         self.disconnect_serial(self.S_shot)
-                        self.S_deg = self.connect_serial(self.S_deg,str(self.value_of_combo.split()[0]),br)
+                        self.S_deg = self.connect_serial(self.S_deg,new_int,br)
                         self.combo2_value.set('not set!')
                     else:
                         #self.S_deg = self.connect_serial(self.S_deg,str(self.value_of_combo.split()[0]),br)
@@ -793,33 +850,39 @@ class TakeDialog(tkinter.Toplevel):
                         pass
                 else:
                     print('S_deg in teoria')
-                    self.S_deg = self.connect_serial(self.S_deg,str(self.value_of_combo.split()[0]),br)
+                    self.S_deg = self.connect_serial(self.S_deg,new_int,br)
             else:
                 print('S_deg in teoria')
-                self.S_deg = self.connect_serial(self.S_deg,str(self.value_of_combo.split()[0]),br)
+                self.S_deg = self.connect_serial(self.S_deg,new_int,br)
             
     def newselection_shot(self,evt):
         print('newselection_shot')
         br=self.br_shot
         self.value_of_combo = self.combo2.get()
-        self.combo2['values'] = ([port[0]+" - "+port[1] for port in serial.tools.list_ports.comports()])
-        self.ser_int = [{'port':str(port[0]), 'desc':str(port[1])} for port in serial.tools.list_ports.comports()]
+        self.get_serial_int()
+        ################
+        new_int = self.get_tty_name(self.value_of_combo)
+        #print('###############################################')
+        print('new_int = '+new_int)
+        #print('###############################################')
+        #self.combo2['values'] = ([port[0]+" - "+port[1] for port in serial.tools.list_ports.comports()])
+        #self.ser_int = [{'port':str(port[0]), 'desc':str(port[1])} for port in serial.tools.list_ports.comports()]
             
         if self.S_shot:
             print('dentro')
             
             
-            if self.S_deg.port != str(self.value_of_combo.split()[0]):
+            if self.S_deg.port != new_int:
                 print('porta libera')
-                if self.S_shot.port != str(self.value_of_combo.split()[0]):
+                if self.S_shot.port != new_int:
                     print('diverso da prima')
                     #print(self.S_deg.port)
                     #print(str(self.value_of_combo.split()[0]))
                     self.disconnect_serial(self.S_deg)
-                    self.S_shot = self.connect_serial(self.S_shot,str(self.value_of_combo.split()[0]),br)
+                    self.S_shot = self.connect_serial(self.S_shot,new_int,br)
                 else:
                     self.disconnect_serial(self.S_deg)
-                    self.S_deg = self.connect_serial(self.S_deg,str(self.value_of_combo.split()[0]),br)
+                    self.S_deg = self.connect_serial(self.S_deg,new_int,br)
                 #print('Now serial '+self.S_deg.port+' will be used to turn the table')
             else:
                 print('porta occupata')
@@ -829,7 +892,7 @@ class TakeDialog(tkinter.Toplevel):
                     #print('cambio')
                     self.disconnect_serial(self.S_shot)
                     self.disconnect_serial(self.S_deg)
-                    self.S_shot = self.connect_serial(self.S_shot,str(self.value_of_combo.split()[0]),br)
+                    self.S_shot = self.connect_serial(self.S_shot,new_int,br)
                     self.combo1_value.set('not set!')
                 else:
                     self.combo2_value.set('not set!')
@@ -838,7 +901,7 @@ class TakeDialog(tkinter.Toplevel):
             print('fuori')
             if self.S_deg != None:
                 print('S_deg exist')
-                if self.S_deg.port == str(self.value_of_combo.split()[0]):
+                if self.S_deg.port == new_int:
                     print('porta occupata')
                     #print(self.S_shot.port)
                     #print(str(self.value_of_combo.split()[0]))
@@ -846,7 +909,7 @@ class TakeDialog(tkinter.Toplevel):
                         #print('cambio')
                         self.disconnect_serial(self.S_shot)
                         self.disconnect_serial(self.S_deg)
-                        self.S_shot = self.connect_serial(self.S_shot,str(self.value_of_combo.split()[0]),br)
+                        self.S_shot = self.connect_serial(self.S_shot,new_int,br)
                         self.combo1_value.set('not set!')
                     else:
                         #self.S_shot = self.connect_serial(self.S_shot,str(self.value_of_combo.split()[0]),br)
@@ -854,10 +917,10 @@ class TakeDialog(tkinter.Toplevel):
                         pass
                 else:
                     print('S_shot in teoria')
-                    self.S_shot = self.connect_serial(self.S_shot,str(self.value_of_combo.split()[0]),br)
+                    self.S_shot = self.connect_serial(self.S_shot,new_int,br)
             else:
                 print('S_shot in teoria')
-                self.S_shot = self.connect_serial(self.S_shot,str(self.value_of_combo.split()[0]),br)
+                self.S_shot = self.connect_serial(self.S_shot,new_int,br)
         
     def disconnect_serial(self, serial_name):
         try:
