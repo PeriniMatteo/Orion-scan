@@ -16,6 +16,11 @@ import cv2
 #from proj import ProjectorDialog
 from pathlib import Path
 import re
+from PIL import ImageTk, Image
+
+
+
+
 class Ask_Device_Name_Dialog(simpledialog.Dialog):
 
     def __init__(self, parent,d_dict,sn):
@@ -364,6 +369,61 @@ class ProcessWindow(tkinter.Toplevel):
             # Process finished
             messagebox.showinfo(message="3D Scan was sucessful done!", title="Finished")
             self.destroy()
+            
+class Check_Cameras_Dialog(tkinter.Toplevel):
+
+    def __init__(self, parent=None):
+
+        tkinter.Toplevel.__init__(self, parent)
+        self.transient(parent)
+
+        self.title('Select a new device')
+        #self.sn=''
+        self.parent = parent
+        #self.fff=0
+        #self.result = None
+        self.grid_columnconfigure(0,weight=1)
+        self.grid_rowconfigure(0,weight=1)
+        self.grid_rowconfigure(1,weight=1)
+        self.grid_rowconfigure(2,weight=1)
+        
+        img_left = Image.open("left.jpg")
+        img_left = ImageTk.PhotoImage(img_left.resize((int(img_left.size[0]/10),int(img_left.size[1]/10)), Image.ANTIALIAS))
+        img_right = Image.open("left.jpg")
+        img_right = ImageTk.PhotoImage(img_right.resize((int(img_right.size[0]/10),int(img_right.size[1]/10)), Image.ANTIALIAS))
+        #img_left = img_left
+
+        #Displaying it
+        imglabel_left = tkinter.Label(self, image=img_left).grid(row=2, column=0)        
+        imglabel_right = tkinter.Label(self, image=img_right).grid(row=2, column=1) 
+        
+        
+        #self.detect_button = ttk.Button(self, text="Detect a new device", command=self.detect, default=tkinter.ACTIVE)
+        #self.detect_button.grid(row=0, column=0, sticky='NSWE')
+        #self.add_button = ttk.Button(self, text="Add to know devices", command=self.add, state=tkinter.DISABLED)
+        #self.add_button.grid(row=1, column=0, sticky='NSWE')
+        #self.remove_button = ttk.Button(self, text="Remove a device", command=self.remove)
+        #self.remove_button.grid(row=2, column=0, sticky='NSWE')
+        self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
+        self.exit_button.grid(row=3, column=0, columnspan=2, sticky='NSWE')
+        self.exit_button
+
+
+        self.grab_set()
+
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+        self.focus_set()
+        self.wait_window(self)
+        
+        
+
+    def cancel(self, event=None):
+        # put focus back to the parent window
+        #print(self.fff)
+        self.parent.focus_set()
+        self.destroy()
 
 class TakeDialog(tkinter.Toplevel):
     def __init__(self,parent):
@@ -499,7 +559,7 @@ class TakeDialog(tkinter.Toplevel):
         # create more pulldown menus
         editmenu = tkinter.Menu(menubar, tearoff=0)
         editmenu.add_command(label="Cut", command=self.hello)
-        editmenu.add_command(label="Copy", command=self.hello)
+        editmenu.add_command(label="Cameras utility", command=self.camera_utility)
         editmenu.add_command(label="Add a new Arduino", command=self.new_device)
         menubar.add_cascade(label="Utility", menu=editmenu)
         
@@ -509,6 +569,8 @@ class TakeDialog(tkinter.Toplevel):
         
         # display the menu
         self.config(menu=menubar)
+        self.geometry("+%d+%d" % (self.parent.winfo_rootx()+50,
+                                  self.parent.winfo_rooty()+50))
         
         
         
@@ -600,8 +662,10 @@ class TakeDialog(tkinter.Toplevel):
         tkinter.messagebox.showinfo("About", "Rosario is a open-source project under GPL licence.\nFor more details please visit:\nhttps://github.com/PeriniMatteo/Rosario")
         
     def new_device(self):
-        print('new device')
+        #print('new device')
         New_Device_Dialog(self)
+    def camera_utility(self):
+        Check_Cameras_Dialog(self)
     def check_pattern_dir(self):
         print('check_pattern_dir')
         #self.pattern_dir='~'
