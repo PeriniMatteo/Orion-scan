@@ -387,10 +387,12 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
         self.grid_rowconfigure(0,weight=1)
         self.grid_rowconfigure(1,weight=1)
         self.grid_rowconfigure(2,weight=1)
-        
-        img_left = Image.open("left.jpg")
+        img = Image.new("L", [4608,3072], 'white')
+        #img_left = Image.open("left.jpg")
+        img_left = img
         img_left = ImageTk.PhotoImage(img_left.resize((int(img_left.size[0]/10),int(img_left.size[1]/10)), Image.ANTIALIAS))
-        img_right = Image.open("left.jpg")
+        #img_right = Image.open("left.jpg")
+        img_right = img
         img_right = ImageTk.PhotoImage(img_right.resize((int(img_right.size[0]/10),int(img_right.size[1]/10)), Image.ANTIALIAS))
         #img_left = img_left
 
@@ -405,8 +407,12 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
         #self.add_button.grid(row=1, column=0, sticky='NSWE')
         #self.remove_button = ttk.Button(self, text="Remove a device", command=self.remove)
         #self.remove_button.grid(row=2, column=0, sticky='NSWE')
-        self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
+        
+        self.exit_button = ttk.Button(self, text="Check cameras", command=self.check)
         self.exit_button.grid(row=3, column=0, columnspan=2, sticky='NSWE')
+        
+        self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
+        self.exit_button.grid(row=4, column=0, columnspan=2, sticky='NSWE')
         self.exit_button
 
 
@@ -418,7 +424,8 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
         self.focus_set()
         self.wait_window(self)
         
-        
+    def check(self):
+        pass
 
     def cancel(self, event=None):
         # put focus back to the parent window
@@ -672,12 +679,10 @@ class TakeDialog(tkinter.Toplevel):
         tkinter.messagebox.showinfo("About", "Orion Scan is a open-source project under GPL licence.\nFor more details please visit:\nhttps://github.com/PeriniMatteo/Orion-scan")
         
     def new_device(self):
-        #print('new device')
         New_Device_Dialog(self)
         
     def camera_utility(self):
-        pass
-        #Check_Cameras_Dialog(self)
+        Check_Cameras_Dialog(self)
         
     def check_pattern_dir(self):
         print('check_pattern_dir')
