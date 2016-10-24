@@ -17,7 +17,8 @@ import cv2
 from pathlib import Path
 import re
 from PIL import ImageTk, Image
-
+import subprocess
+import pickle
 
 
 
@@ -436,25 +437,18 @@ class TakeDialog(tkinter.Toplevel):
         self.S_deg = None
         self.br_deg = 115200
         self.br_shot = 9600
-        #self.combo1_value
-        #self.combo2_value
-        #self.combo1
-        #self.combo2
+        self.CL = None
+        self.CR = None
+
         self.pattern_dir='~'
         self.pattern_files=[]
         self.dir_opt = options = {}
         options['initialdir'] = self.pattern_dir
         options['mustexist'] = False
-        #self.grab_set()
-        #self.lift(aboveThis=self.parent)
+
         self.parent.withdraw()
         self.protocol("WM_DELETE_WINDOW", self.q)
         self.initialize()
-        #self.after(100, self.checkS())
-        ######self.checkForGroupUpdates()
-        #time.sleep(2)
-        #self.ser_int =[]
-        #self.S
         self.i=0
         
         
@@ -473,15 +467,11 @@ class TakeDialog(tkinter.Toplevel):
         except:
             return None
     def get_sn(self,port):
-        #self.port=port
         p = re.compile('S..=\w+')
         sn=p.findall(port[2])[0][4:]
-        #print('sn = '+self.sn)
         return sn
         
     def check_port_in_dict(self,port,dev_dict):
-        #self.port=port
-        #self.dev_dict=dev_dict
         sn=self.get_sn(port)
         if sn in dev_dict:
             return True
@@ -500,11 +490,6 @@ class TakeDialog(tkinter.Toplevel):
         self.l2.grid(column=2,row=3,sticky='WE')
         self.l4 = tkinter.Label(self, text="Serial Interface")
         self.l4.grid(column=4,row=5,sticky='WE')
-        #self.l1 = tk.Label(t, text="N° Scatti")
-        #self.l1.grid(column=2,row=1,sticky='WE')
-        #self.grid_size()
-        #self.Frame(self,width=200,height=100)
-
 
         self.s1 = tkinter.ttk.Separator(self, orient='horizontal')
         self.s1.grid(column=0,row=4,columnspan=7,sticky='WE')
@@ -522,7 +507,6 @@ class TakeDialog(tkinter.Toplevel):
         self.entryDegr.grid(column=3,row=3,columnspan=1,sticky='WE')
         self.entryDegr.bind("<Return>", self.Validate_Entry_Degr)
         self.entryDegr.bind("<FocusOut>", self.Validate_Entry_Degr)
-        #self.entryVariable.set(u"Enter text here.")
         
         self.btn_take = tkinter.Button(self,text=u"Take Pictures!",command=self.Take)
         self.btn_take.grid(column=0,columnspan=6,row=11, sticky='NSWE')
@@ -536,9 +520,6 @@ class TakeDialog(tkinter.Toplevel):
         self.camera2=tkinter.IntVar()
         self.cb_camera2 = tkinter.Checkbutton(self,text=u"Enable Camera2",variable=self.camera2)
         self.cb_camera2.grid(column=0,row=6,columnspan=2,sticky='W')
-        #self.stereo=tkinter.IntVar()
-        #self.cb_stereo = tkinter.Checkbutton(self,text=u"Enable Stereo",variable=self.stereo)
-        #self.cb_stereo.grid(column=0,row=7,columnspan=2,sticky='W')
         self.flash=tkinter.IntVar()
         self.cb_flash = tkinter.Checkbutton(self,text=u"Enable External Flash",variable=self.flash)
         self.cb_flash.grid(column=0,row=9,columnspan=2,sticky='W')
@@ -585,7 +566,7 @@ class TakeDialog(tkinter.Toplevel):
         
         ##self.grid_rowconfigure(2,weight=1)
         ##self.resizable(True,False)
-        self.update()
+        #self.update()
         #self.geometry(self.geometry())
         #self.entry.focus_set()
         #self.entry.selection_range(0, tkinter.END)
@@ -643,14 +624,6 @@ class TakeDialog(tkinter.Toplevel):
         
         ##Update window
         self.update()
-    
-    def get_cam_int(self):
-        pass
-    def newselection_usb_left(self,evt):
-        pass
-    
-    def newselection_usb_right(self,evt):
-        pass
     
     
     def test_serial(self, s_int,i=None):
@@ -1134,12 +1107,162 @@ class TakeDialog(tkinter.Toplevel):
            #print("I need an int!")
            return None
 
+    def attached_cameras(self):
+        cl={}
+        g=subprocess.Popen(["gphoto2","--auto-detect"], stdout=subprocess.PIPE)
+        for l in g.stdout.readlines():
+            p = re.compile('\susb:\d')
+            a = p.findall(l.decode('ascii'))
+            if a != []:
+                p = re.compile('^.*\s+usb:')
+                a = p.findall(l.decode('ascii'))
+                name= '"'+(a[0][:-4]).rstrip()+'"'
+                p = re.compile('usb:\d+,\d+')
+                a = p.findall(l.decode('ascii'))
+                usbid=a[0][4:7]
+                dev=a[0][8:11]
+                g=subprocess.Popen(["lsusb","-s "+str(usbid)+":"+str(dev),"-v"], stdout=subprocess.PIPE)
+                for l in g.stdout.readlines():
+                    p = re.compile('iSerial')
+                    a = p.findall(l.decode('ascii'))
+                    if a != []:
+                        p = re.compile('00*\d*$')
+                        serial = p.findall(l.decode('ascii'))[0]
+                
+                cl[serial]={'name':name,'port':str('usb:'+str(usbid)+','+str(dev)),'usb_id':usbid,'usb_n':dev,'sn':serial}
+        #print(cl)
+        return cl
+    
+    def read_cameras_list(self):
+        try:
+            with open('cameras.txt', 'rb') as f:
+                cam_dict = pickle.loads(f.read())
+            print(cam_dict)
+            return cam_dict
+        except:
+            return {}
+        
+    def update_cam_combos(self):
+        if self.cam_int == []:
+            self.cbl_value.set('not set!')
+            self.cbr_value.set('not set!')
+        else:
+            self.cbl['values'] = ([item['port']+" on "+item['name'] if len(item)==5  else item['name'] for item in self.cam_int])
+            self.cbr['values'] = ([item['port']+" on "+item['name'] if len(item)==5  else item['name'] for item in self.cam_int])
+        
+        
+    def get_cam_int(self):
+        #print('get')
+        #print("get_ser_int")   
+        camlist=self.read_cameras_list()
+        self.cam_int = []
+        
+        
+        for sn in self.attached_cameras().keys():
+            if sn in camlist.keys():
+                #self.cam_int.append({'port':str(port[0]), 'dev':str(port[1]), 'sn':str(sn),'desc':str(devlist[sn])})
+                self.cam_int.append(camlist[sn])
+            else:
+                self.cam_int.append(self.attached_cameras()[sn])
+        self.update_cam_combos()
+        
+        
+        
+    def get_sn_from_combo(self,combo_value):
+        cl =  self.attached_cameras()
+        if combo_value.split()[0][:4]=='usb:':
+            for item in cl.keys():
+                if combo_value.split()[0][:11]==cl[item]['port']:
+                    return item
+        else:
+            for item in cl.keys():
+                if combo_value==cl[item]['desc']:
+                    return item
+        
+    def newselection_usb_left(self,evt):
+        #br=self.br_deg    ####bitrate
+        self.value_of_combo = self.cbl.get()
+        
+        self.get_cam_int()
+        new_int = self.get_sn_from_combo(self.value_of_combo)
+        print('new_int = '+new_int)
+        if self.CL:
+            #print('dentro')
+            
+            if self.CR:
+                if self.CR['sn'] != new_int:
+                    self.CL= self.attached_cameras()[new_int]
+                else:
+                    #print('porta occupata')
+                    if tkinter.messagebox.askyesno("Camera busy", "This camera is already in use! Do you want to use it anyway?",icon="warning"):
+                        self.CR=None
+                        self.CL= self.attached_cameras()[new_int]
+                        self.cbr_value.set('not set!')
+                    else:
+                        self.cbl_value.set('not set!')
+            else:
+                
+                self.CL= self.attached_cameras()[new_int]
+        else:
+            if self.CR:
+                if self.CR['sn'] == new_int:
+                    #print('porta occupata')
+                    if tkinter.messagebox.askyesno("Camera busy", "This camera is already in use! Do you want to use it anyway?",icon="warning"):
+                        
+                        self.CR=None
+                        self.CL= self.attached_cameras()[new_int]
+                        self.cbr_value.set('not set!')
+                    else:
+                        self.cbl_value.set('not set!')
+                        pass
+                else:
+                    self.CL= self.attached_cameras()[new_int]
+            else:
+                self.CL= self.attached_cameras()[new_int]
+    
+    def newselection_usb_right(self,evt):
+        
+        self.value_of_combo = self.cbr.get()
+        
+        self.get_cam_int()
+        new_int = self.get_sn_from_combo(self.value_of_combo)
+        print('new_int = '+new_int)
+        if self.CR:
+            #print('dentro')
+            
+            if self.CL:
+                if self.CL['sn'] != new_int:
+                    self.CR= self.attached_cameras()[new_int]
+                else:
+                    #print('porta occupata')
+                    if tkinter.messagebox.askyesno("Camera busy", "This camera is already in use! Do you want to use it anyway?",icon="warning"):
+                        self.CL=None
+                        self.CR= self.attached_cameras()[new_int]
+                        self.cbl_value.set('not set!')
+                    else:
+                        self.cbr_value.set('not set!')
+            else:
+                
+                self.CR= self.attached_cameras()[new_int]
+        else:
+            if self.CL:
+                if self.CL['sn'] == new_int:
+                    #print('porta occupata')
+                    if tkinter.messagebox.askyesno("Camera busy", "This camera is already in use! Do you want to use it anyway?",icon="warning"):
+                        
+                        self.CL=None
+                        self.CR= self.attached_cameras()[new_int]
+                        self.cbl_value.set('not set!')
+                    else:
+                        self.cbr_value.set('not set!')
+                        pass
+                else:
+                    self.CR= self.attached_cameras()[new_int]
+            else:
+                self.CR= self.attached_cameras()[new_int]
+
 if __name__ == "__main__":
     app = TakeDialog(None)
     app.title('Take window')
-    #app.after(100, app.checkS())
-    #app.after_idle(app.checkS())
     app.mainloop()
-    #S=serial.Serial('/dev/ttyACM0',9600)
-    #for i in range(2):
-    #    print(S.read())
+    
