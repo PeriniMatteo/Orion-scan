@@ -373,8 +373,11 @@ class ProcessWindow(tkinter.Toplevel):
             
 class Check_Cameras_Dialog(tkinter.Toplevel):
 
-    def __init__(self, parent=None):
-
+    def __init__(self, parent, CL, CR):
+        self.CL=CL
+        self.CR=CR       
+        print(self.CL)
+        print(self.CR) 
         tkinter.Toplevel.__init__(self, parent)
         self.transient(parent)
 
@@ -389,16 +392,18 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
         self.grid_rowconfigure(2,weight=1)
         img = Image.new("L", [4608,3072], 'white')
         #img_left = Image.open("left.jpg")
-        img_left = img
-        img_left = ImageTk.PhotoImage(img_left.resize((int(img_left.size[0]/10),int(img_left.size[1]/10)), Image.ANTIALIAS))
+        self.img_left = img
+        self.img_left = ImageTk.PhotoImage(self.img_left.resize((int(self.img_left.size[0]/10),int(self.img_left.size[1]/10)), Image.ANTIALIAS))
         #img_right = Image.open("left.jpg")
-        img_right = img
-        img_right = ImageTk.PhotoImage(img_right.resize((int(img_right.size[0]/10),int(img_right.size[1]/10)), Image.ANTIALIAS))
+        self.img_right = img
+        self.img_right = ImageTk.PhotoImage(self.img_right.resize((int(self.img_right.size[0]/10),int(self.img_right.size[1]/10)), Image.ANTIALIAS))
         #img_left = img_left
 
         #Displaying it
-        imglabel_left = tkinter.Label(self, image=img_left).grid(row=2, column=0)        
-        imglabel_right = tkinter.Label(self, image=img_right).grid(row=2, column=1) 
+        self.imglabel_left = tkinter.Label(self, image=self.img_left)
+        self.imglabel_left.grid(row=2, column=0)        
+        self.imglabel_right = tkinter.Label(self, image=self.img_right)
+        self.imglabel_right.grid(row=2, column=1) 
         
         
         #self.detect_button = ttk.Button(self, text="Detect a new device", command=self.detect, default=tkinter.ACTIVE)
@@ -414,8 +419,6 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
         self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
         self.exit_button.grid(row=4, column=0, columnspan=2, sticky='NSWE')
         self.exit_button
-
-
         self.grab_set()
 
         self.protocol("WM_DELETE_WINDOW", self.cancel)
@@ -425,7 +428,38 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
         self.wait_window(self)
         
     def check(self):
-        pass
+        if self.CL or self.CR:
+            try:
+                subprocess.Popen(["gphoto2","--port="+self.CL['port'],"--capture-image-and-download",'--filename=left.jpg',"--force-overwrite"])
+            except:
+                pass
+            time.sleep(1)
+            try:
+                subprocess.Popen(["gphoto2","--port="+self.CR['port'],"--capture-image-and-download",'--filename=right.jpg',"--force-overwrite"])
+            except:
+                pass
+            time.sleep(5)
+            print('a')
+            if self.CL:   
+                #try:
+                print('left')
+                with Image.open("left.jpg") as img_left:
+                    #img_left.show()
+                    self.img_left = ImageTk.PhotoImage(img_left.resize((int(img_left.size[0]/10),int(img_left.size[1]/10)), Image.ANTIALIAS))
+                    self.imglabel_left.configure(image = self.img_left)
+                    print('c')
+                #except:
+                #    pass
+            if self.CR:
+                try:
+                    print('right')
+                    img_right = Image.open("right.jpg")
+                    self.img_right = ImageTk.PhotoImage(img_right.resize((int(img_right.size[0]/10),int(img_right.size[1]/10)), Image.ANTIALIAS))
+                    self.imglabel_right.configure(image = self.img_right)
+                except:
+                    pass
+                
+        
 
     def cancel(self, event=None):
         # put focus back to the parent window
@@ -682,7 +716,7 @@ class TakeDialog(tkinter.Toplevel):
         New_Device_Dialog(self)
         
     def camera_utility(self):
-        Check_Cameras_Dialog(self)
+        Check_Cameras_Dialog(self,self.CL,self.CR)
         
     def check_pattern_dir(self):
         print('check_pattern_dir')
