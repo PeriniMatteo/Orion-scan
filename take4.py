@@ -611,10 +611,47 @@ class TakeDialog(tkinter.Toplevel):
         #self.combo2.bind("<<postcommand>>", self.get_serial_int)
         self.btn_check_serial_shot = tkinter.Button(self,text=u"Test serial!",command=lambda : self.test_serial(self.S_shot,1))
         self.btn_check_serial_shot.grid(column=4,columnspan=1,row=7, sticky='NSWE')
-        self.update()
+        
+        
+        #### Cameras
+        #label carera left
+        self.lcl = tkinter.Label(self, text="left camera")
+        self.lcl.grid(column=2,row=5,sticky='WE')
+        #label camera right
+        self.lcr = tkinter.Label(self, text="right camera")
+        self.lcr.grid(column=3,row=5,sticky='WE')
+        #combo camera left
+        self.cbl_value = tkinter.StringVar()
+        self.cbl_value.set('not set!')
+        self.cbl = tkinter.ttk.Combobox(self, textvariable=self.cbl_value, postcommand = self.get_cam_int)
+        self.cbl.grid(column=2,row=6, sticky='NSWE')
+        self.cbl.bind("<<ComboboxSelected>>", self.newselection_usb_left)
+        #combo camera right
+        self.cbr_value = tkinter.StringVar()
+        self.cbr_value.set('not set!')
+        self.cbr = tkinter.ttk.Combobox(self, textvariable=self.cbr_value, postcommand = self.get_cam_int)
+        self.cbr.grid(column=3,row=6, sticky='NSWE')
+        self.cbr.bind("<<ComboboxSelected>>", self.newselection_usb_right)
+        
+        self.btn_check_cameras = tkinter.Button(self,text=u"Test cameras!",command=self.camera_utility)
+        self.btn_check_cameras.grid(column=2,columnspan=2,row=7, sticky='NSWE')
+        
+        #### End cameras
         
         ##serial
         self.option_add("*Dialog.msg.wrapLength", "10i") #### to enlarge the tkMessageBox dialog windows  
+        
+        ##Update window
+        self.update()
+    
+    def get_cam_int(self):
+        pass
+    def newselection_usb_left(self,evt):
+        pass
+    
+    def newselection_usb_right(self,evt):
+        pass
+    
     
     def test_serial(self, s_int,i=None):
         txt=''
@@ -659,13 +696,16 @@ class TakeDialog(tkinter.Toplevel):
     def hello(self):
         print('Hello!!')
     def about(self):
-        tkinter.messagebox.showinfo("About", "Rosario is a open-source project under GPL licence.\nFor more details please visit:\nhttps://github.com/PeriniMatteo/Rosario")
+        tkinter.messagebox.showinfo("About", "Orion Scan is a open-source project under GPL licence.\nFor more details please visit:\nhttps://github.com/PeriniMatteo/Orion-scan")
         
     def new_device(self):
         #print('new device')
         New_Device_Dialog(self)
+        
     def camera_utility(self):
-        Check_Cameras_Dialog(self)
+        pass
+        #Check_Cameras_Dialog(self)
+        
     def check_pattern_dir(self):
         print('check_pattern_dir')
         #self.pattern_dir='~'
