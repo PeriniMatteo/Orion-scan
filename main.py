@@ -15,9 +15,9 @@ class simpleapp_tk(tkinter.Tk):
     def __init__(self,parent):
         tkinter.Tk.__init__(self,parent)
         self.parent = parent
-        self.initiali()
+        self.initialize()
         
-    def initiali(self):
+    def initialize(self):
         self.grid()
 
         self.btnTake = tkinter.Button(self,text=u"Take Images",command=self.OnButtonTakeClick)
