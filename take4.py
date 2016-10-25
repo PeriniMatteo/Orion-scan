@@ -332,9 +332,151 @@ class New_Device_Dialog(tkinter.Toplevel):
                 #sn=p.findall(dev[2])[0][4:]
                 #if messagebox.askyesno('New device found!', 'Do you want to add this device to your system?'):
                     #Ask_Device_Name_Dialog(self.dev_dict,sn)
-class New_Camera_Dialog(tkinter.Toplevel):
-    pass
+
+
+
+#####################################################################################################################################################
+#####################################################################################################################################################
+#####################################################################################################################################################
+#####################################################################################################################################################
+
         
+class New_Camera_Dialog(tkinter.Toplevel):
+
+    def __init__(self, parent=None):
+
+        tkinter.Toplevel.__init__(self, parent)
+        self.transient(parent)
+
+        self.title('Select a new camera')
+        #self.sn=''
+        self.parent = parent
+        #self.fff=0
+        self.result = None
+        self.grid_columnconfigure(0,weight=1)
+        self.grid_rowconfigure(0,weight=1)
+        self.grid_rowconfigure(1,weight=1)
+        self.grid_rowconfigure(2,weight=1)
+        self.detect_button = ttk.Button(self, text="Detect a new camera", command=self.detect, default=tkinter.ACTIVE)
+        self.detect_button.grid(row=0, column=0, sticky='NSWE')
+        self.add_button = ttk.Button(self, text="Add to know camera", command=self.add, state=tkinter.DISABLED)
+        self.add_button.grid(row=1, column=0, sticky='NSWE')
+        self.remove_button = ttk.Button(self, text="Remove a camera", command=self.remove)
+        self.remove_button.grid(row=2, column=0, sticky='NSWE')
+        self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
+        self.exit_button.grid(row=3, column=0, sticky='NSWE')
+
+        self.grab_set()
+
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+        self.focus_set()
+        self.wait_window(self)
+        
+        
+        
+        
+        
+    def remove(self):
+        pass
+
+    def cancel(self, event=None):
+        # put focus back to the parent window
+        self.parent.focus_set()
+        self.destroy()
+        
+    def read_cameras_list(self):
+        try:
+            with open('cameras.txt', 'rb') as f:
+                cam_dict = pickle.loads(f.read())
+            #print(cam_dict)
+            return cam_dict
+        except:
+            return {}
+        
+        
+    def attached_cameras(self):
+        cl={}
+        g=subprocess.Popen(["gphoto2","--auto-detect"], stdout=subprocess.PIPE)
+        for l in g.stdout.readlines():
+            p = re.compile('\susb:\d')
+            a = p.findall(l.decode('ascii'))
+            if a != []:
+                p = re.compile('^.*\s+usb:')
+                a = p.findall(l.decode('ascii'))
+                name= '"'+(a[0][:-4]).rstrip()+'"'
+                p = re.compile('usb:\d+,\d+')
+                a = p.findall(l.decode('ascii'))
+                usbid=a[0][4:7]
+                dev=a[0][8:11]
+                g=subprocess.Popen(["lsusb","-s "+str(usbid)+":"+str(dev),"-v"], stdout=subprocess.PIPE)
+                for l in g.stdout.readlines():
+                    p = re.compile('iSerial')
+                    a = p.findall(l.decode('ascii'))
+                    if a != []:
+                        p = re.compile('00*\d*$')
+                        serial = p.findall(l.decode('ascii'))[0]
+                
+                cl[serial]={'name':name,'port':str('usb:'+str(usbid)+','+str(dev)),'usb_id':usbid,'usb_n':dev,'sn':serial}
+        #print(cl)
+        return cl
+        
+        
+    def detect(self):
+        print('detect')
+        self.cam_dict=None
+        #self.ports = list(serial.tools.list_ports.comports())
+        self.plugged_in_cameras = self.attached_cameras()
+        if self.plugged_in_cameras=={}:
+            print('no devices detected')
+            if messagebox.askretrycancel("Warning!","Can't recognize any device!\n Connect a valid device and retry."):
+                self.detect()
+            
+        else:
+            print('camera(s) detected')
+            self.cam_dict=self.read_cameras_list()
+            print(self.cam_dict)
+            if self.cam_dict != {}:
+                new=None
+                txt=''
+                for k in self.plugged_in_cameras.keys():
+                    
+                    if k in self.cam_dict.keys():
+                        txt+='Camera already in use:\n'
+                        txt+='ID #'+self.cam_dict['sn']+'   Name:'+self.cam_dict['name']+'   Desc:'+self.cam_dict['desc']+'\n\n'
+                    else:
+                        new=True
+                        txt+='New camera found:\n'
+                        txt+='ID #'+self.plugged_in_cameras['sn']+'   Name:'+self.plugged_in_cameras['name']+'\n\n'
+                if new:
+                    txt+='\nUse the "Add to know cameras" button to put it in your list.\n'
+                    self.add_button.config(state=tkinter.ACTIVE)
+                else:
+                    txt+='\nNo Unknow device found!'
+                messagebox.showinfo('New camera found!', txt)
+                        
+            else:
+                #print('adding new?')
+                self.add_button.config(state=tkinter.ACTIVE)
+                txt='\nUse the "Add to know cameras" button to put it in your list.\n'
+                messagebox.showinfo('Unknow camera found!', txt)
+                
+
+    def add(self):
+        pass
+
+        
+        
+        
+
+        
+#####################################################################################################################################################
+#####################################################################################################################################################
+#####################################################################################################################################################
+#####################################################################################################################################################
+
+
 
 class ProcessWindow(tkinter.Toplevel):
     def __init__(self, parent, process, serial):
@@ -1171,7 +1313,7 @@ class TakeDialog(tkinter.Toplevel):
         try:
             with open('cameras.txt', 'rb') as f:
                 cam_dict = pickle.loads(f.read())
-            print(cam_dict)
+            #print(cam_dict)
             return cam_dict
         except:
             return {}
