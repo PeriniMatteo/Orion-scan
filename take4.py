@@ -388,7 +388,7 @@ class New_Camera_Dialog(tkinter.Toplevel):
         
     def read_cameras_list(self):
         try:
-            with open('cameras.txt', 'rb') as f:
+            with open('cameras', 'rb') as f:
                 cam_dict = pickle.loads(f.read())
             #print(cam_dict)
             return cam_dict
@@ -444,11 +444,11 @@ class New_Camera_Dialog(tkinter.Toplevel):
                     
                     if k in self.cam_dict.keys():
                         txt+='Camera already in use:\n'
-                        txt+='ID #'+self.cam_dict['sn']+'   Name:'+self.cam_dict['name']+'   Desc:'+self.cam_dict['desc']+'\n\n'
+                        txt+='ID #'+self.cam_dict[k]['sn']+'   Name:'+self.cam_dict[k]['name']+'   Desc:'+self.cam_dict[k]['desc']+'\n\n'
                     else:
                         new=True
                         txt+='New camera found:\n'
-                        txt+='ID #'+self.plugged_in_cameras['sn']+'   Name:'+self.plugged_in_cameras['name']+'\n\n'
+                        txt+='ID #'+self.plugged_in_cameras[k]['sn']+'   Name:'+self.plugged_in_cameras[k]['name']+'\n\n'
                 if new:
                     txt+='\nUse the "Add to know cameras" button to put it in your list.\n'
                     self.add_button.config(state=tkinter.ACTIVE)
@@ -464,12 +464,82 @@ class New_Camera_Dialog(tkinter.Toplevel):
                 
 
     def add(self):
-        pass
+        #print('add')
+        if self.cam_dict != {}:
+            for k in self.plugged_in_cameras.keys():
+                if k in self.cam_dict.keys():
+                    messagebox.showinfo('', 'Camera '+self.cam_dict['sn']+' is already in your list.')
+                else:
+                    if messagebox.askyesno('New camera found!', self.plugged_in_cameras['sn']+'Found!\nDo you want to add this camera to your system?'):
+                        #print(self.cam_dict)
+                        Ask_Camera_Name_Dialog(self, self.cam_dict, self.plugged_in_cameras, self.plugged_in_cameras[k])
+                        #print(self.cam_dict)
+                        self.write_cameras_list(self.cam_dict)
+        else:
+            self.cam_dict={}
+            Ask_Camera_Name_Dialog(self, self.cam_dict, self.plugged_in_cameras)
+            self.write_cameras_list(self.cam_dict)
+            if len(self.plugged_in_cameras.keys())>1:
+                self.add()
+    
+    def write_cameras_list(self,cam_dict):
+        with open('cameras', 'wb') as f:
+            pickle.dump(cam_dict, f)
+        self.add_button.config(state=tkinter.DISABLED)
+        
+        
+class Ask_Camera_Name_Dialog(simpledialog.Dialog):
 
-        
-        
-        
+    def __init__(self, parent, cam_dict, new_dict, sn=None):
 
+        tkinter.Toplevel.__init__(self, parent)
+        self.transient(parent)
+        self.cam_dict = cam_dict
+        self.new_dict = new_dict
+        self.title('Choose a description for your new Camera!')
+        self.transient(parent)
+        self.parent = parent
+    
+        tkinter.Label(self, text="SN:").grid(row=0)
+        tkinter.Label(self, text="Desc:").grid(row=1)
+        self.grid_columnconfigure(0,weight=1)
+        #print('sn === '+sn)
+        self.e1_text = tkinter.StringVar()
+        if sn:
+            self.e1_text.set(str(sn))
+        else:
+            self.e1_text.set(list(self.new_dict.keys())[0])
+        self.e1 = tkinter.Entry(self,textvariable=self.e1_text)
+        self.e1.config(state=tkinter.DISABLED)
+        self.e2 = tkinter.Entry(self)
+        self.e1.grid(row=0, column=1)
+        self.e2.grid(row=1, column=1)
+        self.e2.bind("<Return>", self.return_pressed)
+        self.ok_button = ttk.Button(self, text="OK", command=self.ok)
+        self.ok_button.grid(row=2, column=0,columnspan=2, sticky='NSWE')
+        self.minsize(300,10)
+        self.grab_set()
+        self.focus_set()
+        self.wait_window(self)
+    
+    def return_pressed(self,event):
+        self.ok()
+        
+    def ok(self):
+        first = self.e1.get()
+        second = self.e2.get()
+        self.new_dict[str(first)]['desc'] = str(second)
+        self.cam_dict[str(first)] = self.new_dict[str(first)]
+        
+        
+        #print first, second
+        #print('self.dev_dict in Ask_Device_Name_Dialog')
+        #print(self.dev_dict)
+        New_Device_Dialog.dev_dict=self.cam_dict
+        #print('self.dev_dict in New_Device_Dialog')
+        #print(New_Device_Dialog.cam_dict)
+        self.parent.focus_set()
+        self.destroy()
         
 #####################################################################################################################################################
 #####################################################################################################################################################
@@ -1311,7 +1381,7 @@ class TakeDialog(tkinter.Toplevel):
     
     def read_cameras_list(self):
         try:
-            with open('cameras.txt', 'rb') as f:
+            with open('cameras', 'rb') as f:
                 cam_dict = pickle.loads(f.read())
             #print(cam_dict)
             return cam_dict
@@ -1323,8 +1393,8 @@ class TakeDialog(tkinter.Toplevel):
             self.cbl_value.set('not set!')
             self.cbr_value.set('not set!')
         else:
-            self.cbl['values'] = ([item['port']+" on "+item['name'] if len(item)==5  else item['name'] for item in self.cam_int])
-            self.cbr['values'] = ([item['port']+" on "+item['name'] if len(item)==5  else item['name'] for item in self.cam_int])
+            self.cbl['values'] = ([item['port']+" on "+item['name'] if len(item)==5  else item['desc'] for item in self.cam_int])
+            self.cbr['values'] = ([item['port']+" on "+item['name'] if len(item)==5  else item['desc'] for item in self.cam_int])
         
         
     def get_cam_int(self):
@@ -1346,13 +1416,16 @@ class TakeDialog(tkinter.Toplevel):
         
     def get_sn_from_combo(self,combo_value):
         cl =  self.attached_cameras()
+        cam_list = self.read_cameras_list()
+        print(cl)
+        
         if combo_value.split()[0][:4]=='usb:':
             for item in cl.keys():
                 if combo_value.split()[0][:11]==cl[item]['port']:
                     return item
         else:
-            for item in cl.keys():
-                if combo_value==cl[item]['desc']:
+            for item in cam_list.keys():
+                if combo_value==cam_list[item]['desc']:
                     return item
         
     def newselection_usb_left(self,evt):
