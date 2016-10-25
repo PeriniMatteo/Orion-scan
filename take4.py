@@ -379,7 +379,12 @@ class New_Camera_Dialog(tkinter.Toplevel):
         
         
     def remove(self):
-        pass
+        #print('remove')
+        if self.read_cameras_list() != {}:
+            Remove_Camera_dialog(self)
+        else:
+            messagebox.showinfo('Warning', "There aren't any camera to remove!")
+
 
     def cancel(self, event=None):
         # put focus back to the parent window
@@ -535,9 +540,88 @@ class Ask_Camera_Name_Dialog(simpledialog.Dialog):
         #print first, second
         #print('self.dev_dict in Ask_Device_Name_Dialog')
         #print(self.dev_dict)
-        New_Device_Dialog.dev_dict=self.cam_dict
+        New_Camera_Dialog.dev_dict=self.cam_dict
         #print('self.dev_dict in New_Device_Dialog')
         #print(New_Device_Dialog.cam_dict)
+        self.parent.focus_set()
+        self.destroy()
+        
+class Remove_Camera_dialog(simpledialog.Dialog):
+
+    def __init__(self, parent):
+
+        tkinter.Toplevel.__init__(self, parent)
+        self.transient(parent)
+        self.cam_dict = self.read_cameras_list()
+        #self.sn=sn
+        self.title('Remove a camera!')
+        self.transient(parent)
+        self.parent = parent
+    
+        tkinter.Label(self, text="Camera:").grid(row=0)
+        #tkinter.Label(self, text="Name:").grid(row=1)
+        self.grid_columnconfigure(0,weight=1)
+        self.grid_columnconfigure(1,weight=1)
+        
+        self.combo_txt = tkinter.StringVar()
+        self.combo_txt.set('not set!')
+        self.combo = tkinter.ttk.Combobox(self, textvariable=self.combo_txt, postcommand = self.get_values)
+        self.combo.grid(column=1,row=0, sticky='NSWE')
+        self.combo.bind("<<ComboboxSelected>>", self.newselection)
+        
+        self.ok_button = ttk.Button(self, text="Remove", command=self.ok)
+        self.ok_button.grid(row=1, column=0,columnspan=2, sticky='NSWE')
+        self.quit_button = ttk.Button(self, text="Exit", command=self.qq)
+        self.quit_button.grid(row=2, column=0,columnspan=2, sticky='NSWE')
+        self.minsize(500,10)
+        self.grab_set()
+        self.focus_set()
+        self.wait_window(self)
+    
+    
+    def read_cameras_list(self):
+        try:
+            with open('cameras', 'rb') as f:
+                cam_dict = pickle.loads(f.read())
+            #print(cam_dict)
+            return cam_dict
+        except:
+            return {}
+    
+    def write_cameras_list(self,cam_dict):
+        with open('cameras', 'wb') as f:
+            pickle.dump(cam_dict, f)
+        #self.add_button.config(state=tkinter.DISABLED)
+        
+        
+    def get_values(self):
+        self.combo['values'] = [str(self.cam_dict[k]['sn']+'  '+self.cam_dict[k]['desc']+'  '+self.cam_dict[k]['name']) for k in self.cam_dict.keys()]
+        #pass
+        
+    def newselection(self,evt):
+        val = self.combo.get()
+        self.sn = val.split()[0]
+        #self.name = self.cam_dict[self.sn]
+        
+        
+    #def return_pressed(self,event):
+    #    self.ok()
+        
+    def ok(self):
+        self.cam_dict.pop(self.sn)
+        self.write_cameras_list(self.cam_dict)
+        if self.cam_dict=={}:
+            messagebox.showinfo('Warning', "There aren't other devices to remove!")
+            self.parent.focus_set()
+            self.destroy()
+            #New_Device_Dialog()
+        else:
+            self.combo_txt.set('Select a device!')
+            self.cam_dict = self.read_cameras_list()
+            self.get_values()
+        
+        
+    def qq(self):
         self.parent.focus_set()
         self.destroy()
         
