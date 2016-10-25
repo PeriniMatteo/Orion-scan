@@ -653,10 +653,15 @@ class TakeDialog(tkinter.Toplevel):
         
         
     def q(self):
-        print('quit')
         self.destroy()
         self.parent.update()
         self.parent.deiconify()
+    
+    def qq(self):
+        self.destroy()
+        self.parent.update()
+        self.parent.deiconify()
+        self.parent.destroy()
         
     def read_devices_list(self):
         try:
@@ -730,18 +735,21 @@ class TakeDialog(tkinter.Toplevel):
     
         # create a pulldown menu, and add it to the menu bar
         filemenu = tkinter.Menu(menubar, tearoff=0)
-        filemenu.add_command(label="Open", command=self.hello)
-        filemenu.add_command(label="Save", command=self.hello)
+        #filemenu.add_command(label="Open", command=self.hello)
+        #filemenu.add_command(label="Save", command=self.hello)
         filemenu.add_separator()
         filemenu.add_command(label="Return to main window", command=self.q)
+        filemenu.add_separator()
+        filemenu.add_command(label="Quit", command=self.qq)
         menubar.add_cascade(label="File", menu=filemenu)
         
         # create more pulldown menus
         editmenu = tkinter.Menu(menubar, tearoff=0)
         
         editmenu.add_command(label="Check cameras", command=self.camera_utility)
-        editmenu.add_command(label="Add a new camera", command=self.new_camera)
-        editmenu.add_command(label="Add a new device", command=self.new_device)
+        editmenu.add_command(label="View pattern images", command=self.wiev_pattern_image)
+        editmenu.add_command(label="Add/remove a new camera", command=self.new_camera)
+        editmenu.add_command(label="Add/remove a new device", command=self.new_device)
         menubar.add_cascade(label="Utility", menu=editmenu)
         
         helpmenu = tkinter.Menu(menubar, tearoff=0)
@@ -813,7 +821,8 @@ class TakeDialog(tkinter.Toplevel):
         ##Update window
         self.update()
     
-    
+    def wiev_pattern_image(self):
+        pass
     def test_serial(self, s_int,i=None):
         txt=''
         if s_int:
