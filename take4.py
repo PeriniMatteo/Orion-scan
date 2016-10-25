@@ -586,12 +586,11 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
         self.imglabel_right = tkinter.Label(self, image=self.img_right)
         self.imglabel_right.grid(row=2, column=1) 
         
-        self.exit_button = ttk.Button(self, text="Check cameras", command=self.check)
-        self.exit_button.grid(row=3, column=0, columnspan=2, sticky='NSWE')
+        self.check_button = ttk.Button(self, text="Check cameras", command=self.check)
+        self.check_button.grid(row=3, column=0, columnspan=2, sticky='NSWE')
         
         self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
         self.exit_button.grid(row=4, column=0, columnspan=2, sticky='NSWE')
-        self.exit_button
         self.grab_set()
 
         self.protocol("WM_DELETE_WINDOW", self.cancel)
@@ -621,6 +620,44 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
                     self.imglabel_right.configure(image = self.img_right)
                 
         
+
+    def cancel(self, event=None):
+        self.parent.focus_set()
+        self.destroy()
+        
+class Check_Pattern_Image_Dialog(tkinter.Toplevel):
+
+    def __init__(self, parent, path, images):
+
+        tkinter.Toplevel.__init__(self, parent)
+        self.transient(parent)
+
+        self.title('Show pattern images')
+        self.parent = parent
+        self.grid_columnconfigure(0,weight=1)
+        self.grid_rowconfigure(0,weight=1)
+        self.grid_rowconfigure(1,weight=1)
+        self.grid_rowconfigure(2,weight=1)
+        #img = Image.new("L", [4608,3072], 'white')
+        
+        for n,i in enumerate(images):
+            with Image.open(path+'/'+i) as img:
+                
+                #img.show()
+                tkinter.Label(self, image= ImageTk.PhotoImage(img.resize((int(img.size[0]/10),int(img.size[1]/10)), Image.ANTIALIAS))).grid(row=2, column=n)
+        
+        
+        
+        self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
+        self.exit_button.grid(row=4, column=0, columnspan=2, sticky='NSWE')
+        self.exit_button
+        self.grab_set()
+
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+        self.focus_set()
+        self.wait_window(self)
 
     def cancel(self, event=None):
         self.parent.focus_set()
@@ -747,7 +784,7 @@ class TakeDialog(tkinter.Toplevel):
         editmenu = tkinter.Menu(menubar, tearoff=0)
         
         editmenu.add_command(label="Check cameras", command=self.camera_utility)
-        editmenu.add_command(label="View pattern images", command=self.wiev_pattern_image)
+        editmenu.add_command(label="View pattern images", command=self.view_pattern_image)
         editmenu.add_command(label="Add/remove a new camera", command=self.new_camera)
         editmenu.add_command(label="Add/remove a new device", command=self.new_device)
         menubar.add_cascade(label="Utility", menu=editmenu)
@@ -821,8 +858,12 @@ class TakeDialog(tkinter.Toplevel):
         ##Update window
         self.update()
     
-    def wiev_pattern_image(self):
+    def view_pattern_image(self):
+        #self.open_win_proj()
+        #if self.proj.get():
+        #    Check_Pattern_Image_Dialog(self,self.pattern_dir, self.pattern_files)
         pass
+        
     def test_serial(self, s_int,i=None):
         txt=''
         if s_int:
@@ -903,6 +944,8 @@ class TakeDialog(tkinter.Toplevel):
                     tkinter.messagebox.showinfo("Using files", ''.join([str(a)+'\n' for a in self.pattern_files]))
             else:
                 tkinter.messagebox.showinfo("Using files", ''.join([str(a)+'\n' for a in self.pattern_files]))
+        else:
+            tkinter.messagebox.showinfo("Warning", 'Enable the projector check button first!')
             
     def get_serial_int(self): 
         devlist=self.read_devices_list()
