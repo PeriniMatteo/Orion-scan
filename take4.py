@@ -9,11 +9,9 @@ from tkinter import filedialog
 from tkinter import simpledialog
 import serial
 import serial.tools.list_ports
-#import threading
 import time
 import multiprocessing
 import cv2
-#from proj import ProjectorDialog
 from pathlib import Path
 import re
 from PIL import ImageTk, Image
@@ -29,7 +27,6 @@ class Ask_Device_Name_Dialog(simpledialog.Dialog):
         tkinter.Toplevel.__init__(self, parent)
         self.transient(parent)
         self.dev_dict=d_dict
-        #self.sn=sn
         self.title('Choose a name for your new device!')
         self.transient(parent)
         self.parent = parent
@@ -40,16 +37,13 @@ class Ask_Device_Name_Dialog(simpledialog.Dialog):
         print('sn === '+sn)
         self.e1_text = tkinter.StringVar()
         self.e1_text.set(str(sn))
-        #self.e1 = tkinter.Entry(self,textvariable=str(sn), state=tkinter.DISABLED)
         self.e1 = tkinter.Entry(self,textvariable=self.e1_text)
         self.e1.config(state=tkinter.DISABLED)
-        #self.e1
         self.e2 = tkinter.Entry(self)
     
         self.e1.grid(row=0, column=1)
         self.e2.grid(row=1, column=1)
         self.e2.bind("<Return>", self.return_pressed)
-        #return self.e1 # initial focus
         self.ok_button = ttk.Button(self, text="OK", command=self.ok)
         self.ok_button.grid(row=2, column=0,columnspan=2, sticky='NSWE')
         self.minsize(300,10)
@@ -65,12 +59,7 @@ class Ask_Device_Name_Dialog(simpledialog.Dialog):
         second = self.e2.get()
         self.dev_dict[str(first)]=str(second)
         
-        #print first, second
-        print('self.dev_dict in Ask_Device_Name_Dialog')
-        print(self.dev_dict)
         New_Device_Dialog.dev_dict=self.dev_dict
-        print('self.dev_dict in New_Device_Dialog')
-        print(New_Device_Dialog.dev_dict)
         self.parent.focus_set()
         self.destroy()
         
@@ -87,7 +76,6 @@ class Remove_Device_Dialog(simpledialog.Dialog):
         self.parent = parent
     
         tkinter.Label(self, text="Device:").grid(row=0)
-        #tkinter.Label(self, text="Name:").grid(row=1)
         self.grid_columnconfigure(0,weight=1)
         self.grid_columnconfigure(1,weight=1)
         
@@ -97,13 +85,6 @@ class Remove_Device_Dialog(simpledialog.Dialog):
         self.combo.grid(column=1,row=0, sticky='NSWE')
         #self.combo1_value.set('not set!')
         self.combo.bind("<<ComboboxSelected>>", self.newselection)
-        
-        #self.names_combo_txt = tkinter.StringVar()
-        #self.names_combo_txt.set('not set!')
-        #self.names_combo = tkinter.ttk.Combobox(self, textvariable=self.names_combo_txt, postcommand = self.get_values)
-        #self.names_combo.grid(column=1,row=0, sticky='W')
-        #self.combo1_value.set('not set!')
-        #self.names_combo.bind("<<ComboboxSelected>>", self.newselection_names)
         
         self.ok_button = ttk.Button(self, text="Remove", command=self.ok)
         self.ok_button.grid(row=1, column=0,columnspan=2, sticky='NSWE')
@@ -116,31 +97,24 @@ class Remove_Device_Dialog(simpledialog.Dialog):
         
         
     def write_devices_list(self):
-        f=open('devices.txt','w')
-        for d in self.dev_dict.keys():
-            f.write(str(d)+' '+str(self.dev_dict[d])+'\n')
-        f.close()
+        with open('devices', 'wb') as f:
+            pickle.dump(self.dev_dict, f)
         
     def read_devices_list(self):
         try:
-            f=open('devices.txt','r')
-            dev_dict={item.split()[0] : ' '.join(item.split()[1:]) for item in f.readlines()}
-            f.close()
-            return dev_dict
+            with open('devices', 'rb') as f:
+                dev_dict = pickle.loads(f.read())
+                return dev_dict
         except:
             return None
         
     def get_values(self):
         self.combo['values'] = [str(nn)+'  '+str(self.dev_dict[nn]) for nn in self.dev_dict]
-        #pass
+
     def newselection(self,evt):
         val = self.combo.get()
         self.sn = val.split()[0]
         self.name = self.dev_dict[self.sn]
-        
-        
-    #def return_pressed(self,event):
-    #    self.ok()
         
     def ok(self):
         self.dev_dict.pop(self.sn)
@@ -149,7 +123,6 @@ class Remove_Device_Dialog(simpledialog.Dialog):
             messagebox.showinfo('Warning', "There aren't other devices to remove!")
             self.parent.focus_set()
             self.destroy()
-            #New_Device_Dialog()
         else:
             self.combo_txt.set('Select a device!')
             self.dev_dict = self.read_devices_list()
@@ -168,7 +141,6 @@ class New_Device_Dialog(tkinter.Toplevel):
         self.transient(parent)
 
         self.title('Select a new device')
-        #self.sn=''
         self.parent = parent
         self.fff=0
         self.result = None
@@ -185,7 +157,6 @@ class New_Device_Dialog(tkinter.Toplevel):
         self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
         self.exit_button.grid(row=3, column=0, sticky='NSWE')
 
-
         self.grab_set()
 
         self.protocol("WM_DELETE_WINDOW", self.cancel)
@@ -194,37 +165,25 @@ class New_Device_Dialog(tkinter.Toplevel):
         self.focus_set()
         self.wait_window(self)
         
-        
-        
-        
-        
     def remove(self):
-        #if not self.fff:
-        #    self.fff=0
         print('remove')
         if self.read_devices_list():
             Remove_Device_Dialog(self)
         else:
             messagebox.showinfo('Warning', "There aren't devices to remove!")
-            
-        #self.fff+=1
-        #print(self.fff)
-        #self.add_button.config(state=tkinter.ACTIVE)
-        pass
 
     def cancel(self, event=None):
-        # put focus back to the parent window
-        #print(self.fff)
         self.parent.focus_set()
         self.destroy()
+        
     def read_devices_list(self):
         try:
-            f=open('devices.txt','r')
-            dev_dict={item.split()[0] : ' '.join(item.split()[1:]) for item in f.readlines()}
-            f.close()
-            return dev_dict
+            with open('devices', 'rb') as f:
+                dev_dict = pickle.loads(f.read())
+                return dev_dict
         except:
             return None
+            
     def get_sn(self,port):
         self.port=port
         p = re.compile('S..=\w+')
@@ -243,10 +202,8 @@ class New_Device_Dialog(tkinter.Toplevel):
         
     def write_devices_list(self,dev_dict):
         self.dev_dict=dev_dict
-        f=open('devices.txt','w')
-        for d in dev_dict.keys():
-            f.write(str(d)+' '+str(dev_dict[d])+'\n')
-        f.close()
+        with open('devices', 'wb') as f:
+            pickle.dump(self.dev_dict, f)
         self.add_button.config(state=tkinter.DISABLED)
             
     def detect(self):
@@ -269,16 +226,11 @@ class New_Device_Dialog(tkinter.Toplevel):
                     
                     if self.check_port_in_dict(dev,self.dev_dict):
                         txt+='Device already in use:\n'
-                        #print('esiste')
-                        #messagebox.showinfo('Device #'+self.sn, 'Device:'+self.dev_dict[self.sn]+' is already in your list')
-                        #pass
                         txt+='ID #'+self.sn+'   Name:'+self.dev_dict[self.sn]+'\n\n'
                     else:
                         new=True
                         txt+='New device found:\n'
                         txt+='ID #'+self.sn+'\n\n'
-                        #print('aggiungiamo?')
-                        #self.add_button.config(state=tkinter.ACTIVE)
                 if new:
                     txt+='\nUse the "Add to know devices" button to put it in your list.\n'
                     self.add_button.config(state=tkinter.ACTIVE)
@@ -291,14 +243,8 @@ class New_Device_Dialog(tkinter.Toplevel):
                 self.add_button.config(state=tkinter.ACTIVE)
                 txt='\nUse the "Add to know devices" button to put it in your list.\n'
                 messagebox.showinfo('Unknow device found!', txt)
-                #messagebox.showinfo('New device found!', 'Use the "Add to know devices" button to put it in your list.')
-                #Ask_Device_Name_Dialog(self.dev_dict,sn)
                 
-
     def add(self):
-        print('add')
-        #print(self.dev_dict)
-        #p = re.compile('S..=\w+')
         if self.dev_dict:
             for dev in self.ports:
                 if self.check_port_in_dict(dev,self.dev_dict):
@@ -308,37 +254,16 @@ class New_Device_Dialog(tkinter.Toplevel):
                         print(self.dev_dict)
                         Ask_Device_Name_Dialog(self,self.dev_dict,self.sn)
                         print(self.dev_dict)
-                        print('siiiiiiiiiiiiiiiiiii')
                         self.write_devices_list(self.dev_dict)
         else:
-            #self.ports
             self.dev_dict={}
             self.get_sn(self.ports[0])
-            print('a')
             print(self.dev_dict)
             Ask_Device_Name_Dialog(self,self.dev_dict,self.sn)
-            print('b')
             print(self.dev_dict)
-            print('soooooooooooooooo')
             self.write_devices_list(self.dev_dict)
             if len(self.ports)>1:
                 self.add()
-            
-                
-        #else:
-            #p = re.compile('S..=\w+')
-            #self.dev_dict={}
-            #for dev in ports:
-                #sn=p.findall(dev[2])[0][4:]
-                #if messagebox.askyesno('New device found!', 'Do you want to add this device to your system?'):
-                    #Ask_Device_Name_Dialog(self.dev_dict,sn)
-
-
-
-#####################################################################################################################################################
-#####################################################################################################################################################
-#####################################################################################################################################################
-#####################################################################################################################################################
 
         
 class New_Camera_Dialog(tkinter.Toplevel):
@@ -349,9 +274,7 @@ class New_Camera_Dialog(tkinter.Toplevel):
         self.transient(parent)
 
         self.title('Select a new camera')
-        #self.sn=''
         self.parent = parent
-        #self.fff=0
         self.result = None
         self.grid_columnconfigure(0,weight=1)
         self.grid_rowconfigure(0,weight=1)
@@ -379,7 +302,6 @@ class New_Camera_Dialog(tkinter.Toplevel):
         
         
     def remove(self):
-        #print('remove')
         if self.read_cameras_list() != {}:
             Remove_Camera_dialog(self)
         else:
@@ -387,7 +309,6 @@ class New_Camera_Dialog(tkinter.Toplevel):
 
 
     def cancel(self, event=None):
-        # put focus back to the parent window
         self.parent.focus_set()
         self.destroy()
         
@@ -395,8 +316,7 @@ class New_Camera_Dialog(tkinter.Toplevel):
         try:
             with open('cameras', 'rb') as f:
                 cam_dict = pickle.loads(f.read())
-            #print(cam_dict)
-            return cam_dict
+                return cam_dict
         except:
             return {}
         
@@ -431,7 +351,6 @@ class New_Camera_Dialog(tkinter.Toplevel):
     def detect(self):
         print('detect')
         self.cam_dict=None
-        #self.ports = list(serial.tools.list_ports.comports())
         self.plugged_in_cameras = self.attached_cameras()
         if self.plugged_in_cameras=={}:
             print('no devices detected')
@@ -462,23 +381,19 @@ class New_Camera_Dialog(tkinter.Toplevel):
                 messagebox.showinfo('New camera found!', txt)
                         
             else:
-                #print('adding new?')
                 self.add_button.config(state=tkinter.ACTIVE)
                 txt='\nUse the "Add to know cameras" button to put it in your list.\n'
                 messagebox.showinfo('Unknow camera found!', txt)
                 
 
     def add(self):
-        #print('add')
         if self.cam_dict != {}:
             for k in self.plugged_in_cameras.keys():
                 if k in self.cam_dict.keys():
                     messagebox.showinfo('', 'Camera '+self.cam_dict['sn']+' is already in your list.')
                 else:
                     if messagebox.askyesno('New camera found!', self.plugged_in_cameras['sn']+'Found!\nDo you want to add this camera to your system?'):
-                        #print(self.cam_dict)
                         Ask_Camera_Name_Dialog(self, self.cam_dict, self.plugged_in_cameras, self.plugged_in_cameras[k])
-                        #print(self.cam_dict)
                         self.write_cameras_list(self.cam_dict)
         else:
             self.cam_dict={}
@@ -508,7 +423,6 @@ class Ask_Camera_Name_Dialog(simpledialog.Dialog):
         tkinter.Label(self, text="SN:").grid(row=0)
         tkinter.Label(self, text="Desc:").grid(row=1)
         self.grid_columnconfigure(0,weight=1)
-        #print('sn === '+sn)
         self.e1_text = tkinter.StringVar()
         if sn:
             self.e1_text.set(str(sn))
@@ -536,13 +450,8 @@ class Ask_Camera_Name_Dialog(simpledialog.Dialog):
         self.new_dict[str(first)]['desc'] = str(second)
         self.cam_dict[str(first)] = self.new_dict[str(first)]
         
-        
-        #print first, second
-        #print('self.dev_dict in Ask_Device_Name_Dialog')
-        #print(self.dev_dict)
         New_Camera_Dialog.dev_dict=self.cam_dict
-        #print('self.dev_dict in New_Device_Dialog')
-        #print(New_Device_Dialog.cam_dict)
+        
         self.parent.focus_set()
         self.destroy()
         
@@ -553,13 +462,11 @@ class Remove_Camera_dialog(simpledialog.Dialog):
         tkinter.Toplevel.__init__(self, parent)
         self.transient(parent)
         self.cam_dict = self.read_cameras_list()
-        #self.sn=sn
         self.title('Remove a camera!')
         self.transient(parent)
         self.parent = parent
     
         tkinter.Label(self, text="Camera:").grid(row=0)
-        #tkinter.Label(self, text="Name:").grid(row=1)
         self.grid_columnconfigure(0,weight=1)
         self.grid_columnconfigure(1,weight=1)
         
@@ -583,29 +490,20 @@ class Remove_Camera_dialog(simpledialog.Dialog):
         try:
             with open('cameras', 'rb') as f:
                 cam_dict = pickle.loads(f.read())
-            #print(cam_dict)
-            return cam_dict
+                return cam_dict
         except:
             return {}
     
     def write_cameras_list(self,cam_dict):
         with open('cameras', 'wb') as f:
             pickle.dump(cam_dict, f)
-        #self.add_button.config(state=tkinter.DISABLED)
-        
         
     def get_values(self):
         self.combo['values'] = [str(self.cam_dict[k]['sn']+'  '+self.cam_dict[k]['desc']+'  '+self.cam_dict[k]['name']) for k in self.cam_dict.keys()]
-        #pass
         
     def newselection(self,evt):
         val = self.combo.get()
         self.sn = val.split()[0]
-        #self.name = self.cam_dict[self.sn]
-        
-        
-    #def return_pressed(self,event):
-    #    self.ok()
         
     def ok(self):
         self.cam_dict.pop(self.sn)
@@ -614,22 +512,14 @@ class Remove_Camera_dialog(simpledialog.Dialog):
             messagebox.showinfo('Warning', "There aren't other devices to remove!")
             self.parent.focus_set()
             self.destroy()
-            #New_Device_Dialog()
         else:
             self.combo_txt.set('Select a device!')
             self.cam_dict = self.read_cameras_list()
             self.get_values()
         
-        
     def qq(self):
         self.parent.focus_set()
         self.destroy()
-        
-#####################################################################################################################################################
-#####################################################################################################################################################
-#####################################################################################################################################################
-#####################################################################################################################################################
-
 
 
 class ProcessWindow(tkinter.Toplevel):
@@ -665,7 +555,6 @@ class ProcessWindow(tkinter.Toplevel):
         if self.process.is_alive():
             self.after(100, self.isAlive)
         elif self:
-            # Process finished
             messagebox.showinfo(message="3D Scan was sucessful done!", title="Finished")
             self.destroy()
             
@@ -680,36 +569,22 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
         self.transient(parent)
 
         self.title('Select a new device')
-        #self.sn=''
         self.parent = parent
-        #self.fff=0
-        #self.result = None
         self.grid_columnconfigure(0,weight=1)
         self.grid_rowconfigure(0,weight=1)
         self.grid_rowconfigure(1,weight=1)
         self.grid_rowconfigure(2,weight=1)
         img = Image.new("L", [4608,3072], 'white')
-        #img_left = Image.open("left.jpg")
         self.img_left = img
         self.img_left = ImageTk.PhotoImage(self.img_left.resize((int(self.img_left.size[0]/10),int(self.img_left.size[1]/10)), Image.ANTIALIAS))
-        #img_right = Image.open("left.jpg")
         self.img_right = img
         self.img_right = ImageTk.PhotoImage(self.img_right.resize((int(self.img_right.size[0]/10),int(self.img_right.size[1]/10)), Image.ANTIALIAS))
-        #img_left = img_left
 
         #Displaying it
         self.imglabel_left = tkinter.Label(self, image=self.img_left)
         self.imglabel_left.grid(row=2, column=0)        
         self.imglabel_right = tkinter.Label(self, image=self.img_right)
         self.imglabel_right.grid(row=2, column=1) 
-        
-        
-        #self.detect_button = ttk.Button(self, text="Detect a new device", command=self.detect, default=tkinter.ACTIVE)
-        #self.detect_button.grid(row=0, column=0, sticky='NSWE')
-        #self.add_button = ttk.Button(self, text="Add to know devices", command=self.add, state=tkinter.DISABLED)
-        #self.add_button.grid(row=1, column=0, sticky='NSWE')
-        #self.remove_button = ttk.Button(self, text="Remove a device", command=self.remove)
-        #self.remove_button.grid(row=2, column=0, sticky='NSWE')
         
         self.exit_button = ttk.Button(self, text="Check cameras", command=self.check)
         self.exit_button.grid(row=3, column=0, columnspan=2, sticky='NSWE')
@@ -731,7 +606,6 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
                 subprocess.Popen(["gphoto2","--port="+self.CL['port'],"--capture-image-and-download",'--filename=left.jpg',"--force-overwrite"])
             except:
                 pass
-            #time.sleep(1)
             try:
                 subprocess.Popen(["gphoto2","--port="+self.CR['port'],"--capture-image-and-download",'--filename=right.jpg',"--force-overwrite"])
             except:
@@ -749,8 +623,6 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
         
 
     def cancel(self, event=None):
-        # put focus back to the parent window
-        #print(self.fff)
         self.parent.focus_set()
         self.destroy()
 
@@ -788,10 +660,9 @@ class TakeDialog(tkinter.Toplevel):
         
     def read_devices_list(self):
         try:
-            f=open('devices.txt','r')
-            dev_dict={item.split()[0] : ' '.join(item.split()[1:]) for item in f.readlines()}
-            f.close()
-            return dev_dict
+            with open('devices', 'rb') as f:
+                dev_dict = pickle.loads(f.read())
+                return dev_dict
         except:
             return None
     def get_sn(self,port):
@@ -889,25 +760,15 @@ class TakeDialog(tkinter.Toplevel):
         for i in range(12):
             self.grid_columnconfigure(i,weight=1)
         
-        ##self.grid_columnconfigure(3,weight=1)
         for i in range(6):
             self.grid_rowconfigure(i,weight=1)
-        
-        ##self.grid_rowconfigure(2,weight=1)
-        ##self.resizable(True,False)
-        #self.update()
-        #self.geometry(self.geometry())
-        #self.entry.focus_set()
-        #self.entry.selection_range(0, tkinter.END)
-        ##self.minsize(720,480)
         
         self.combo1_value = tkinter.StringVar()
         self.combo1_value.set('not set!')
         self.combo1 = tkinter.ttk.Combobox(self, textvariable=self.combo1_value, postcommand = self.get_serial_int)
         self.combo1.grid(column=4,row=2, sticky='W')
-        #self.combo1_value.set('not set!')
         self.combo1.bind("<<ComboboxSelected>>", self.newselection_deg)
-        #elf.combo1.bind("<<postcommand>>", self.get_serial_int)
+        
         ##serial
         self.btn_check_serial_deg = tkinter.Button(self,text=u"Test serial!",command=lambda : self.test_serial(self.S_deg,0))
         self.btn_check_serial_deg.grid(column=4,columnspan=1,row=3, sticky='NSWE')
@@ -916,9 +777,7 @@ class TakeDialog(tkinter.Toplevel):
         self.combo2_value.set('not set!')
         self.combo2 = tkinter.ttk.Combobox(self, textvariable=self.combo2_value, postcommand = self.get_serial_int)
         self.combo2.grid(column=4,row=6, sticky='W')
-        #self.combo2_value.set('not set!')
         self.combo2.bind("<<ComboboxSelected>>", self.newselection_shot)
-        #self.combo2.bind("<<postcommand>>", self.get_serial_int)
         self.btn_check_serial_shot = tkinter.Button(self,text=u"Test serial!",command=lambda : self.test_serial(self.S_shot,1))
         self.btn_check_serial_shot.grid(column=4,columnspan=1,row=7, sticky='NSWE')
         
@@ -961,19 +820,12 @@ class TakeDialog(tkinter.Toplevel):
             S=s_int
             time.sleep(0.5)
             try:
-                #self.read_serial(S)
                 S.flushInput()
                 S.flushOutput()
-                #time.sleep(0.5)
-                #S.write("$$\n".encode('ascii'))
                 S.write("$$\n$$\n$$\n".encode('ascii'))
                 time.sleep(0.5)
                 txt=self.read_serial(S)
-                #print(txt)
-                #time.sleep(0.5)
-                #txt+=self.read_serial(S)
                 print(txt)
-                #print(txt)
             except:
                 tkinter.messagebox.showinfo("Except!", "This connection seems inactive or not properly set!",icon="warning")
                 pass
@@ -1010,13 +862,10 @@ class TakeDialog(tkinter.Toplevel):
         Check_Cameras_Dialog(self,self.CL,self.CR)
         
     def check_pattern_dir(self):
-        print('check_pattern_dir')
-        #self.pattern_dir='~'
         n=0
         self.pattern_files=[]
         while True:
             filename=str(n)+'.tif'
-            #print(self.pattern_dir+'/'+filename)
             m = Path(self.pattern_dir+'/'+filename)
             if m.is_file():
                 print(filename+' e un file!')
@@ -1028,14 +877,12 @@ class TakeDialog(tkinter.Toplevel):
             
     def askdirectory(self):
     
-        """Returns a selected directoryname."""
+        #Returns a selected directoryname
         return filedialog.askdirectory(**self.dir_opt)
         
     def open_win_proj(self):
         if self.proj.get():
-            print('open_win_proj')
             self.check_pattern_dir()
-            print('continue')
             if tkinter.messagebox.askyesno("Select Pattern Folder", "The current folder is "+self.pattern_dir+"! Do you want to change it?",icon="warning"):
                 self.pattern_dir = self.askdirectory()
                 self.check_pattern_dir()
@@ -1048,11 +895,7 @@ class TakeDialog(tkinter.Toplevel):
             else:
                 tkinter.messagebox.showinfo("Using files", ''.join([str(a)+'\n' for a in self.pattern_files]))
             
-        #P=ProjectorDialog(self)
-        #print(self.pattern_dir)
-    def get_serial_int(self):
-        print('get')
-        #print("get_ser_int")   
+    def get_serial_int(self): 
         devlist=self.read_devices_list()
         self.ser_int = []
         for port in serial.tools.list_ports.comports():
@@ -1062,21 +905,15 @@ class TakeDialog(tkinter.Toplevel):
             except:
                 self.ser_int.append({'port':str(port[0]), 'dev':str(port[1]), 'sn':str(sn)})
         self.update_combos()
-        #return self.ser_int
     
     def update_combos(self):
         if self.ser_int == []:
             self.combo1_value.set('not set!')
             self.combo2_value.set('not set!')
         else:
-            #devlist=self.read_devices_list()
-             
-            #self.combo1['values'] = ([port[0]+" - "+port[1] for port in serial.tools.list_ports.comports() if not New_Device_Dialog.check_port_in_dict(port,devlist) else devlist[New_Device_Dialog.get_sn(port)]])
-            #self.combo1['values'] = ([port[0]+" - "+port[1] if not self.check_port_in_dict(port,devlist)  else devlist[self.get_sn(port)] for port in serial.tools.list_ports.comports()])
-            #self.combo2['values'] = ([port[0]+" - "+port[1] if not self.check_port_in_dict(port,devlist)  else devlist[self.get_sn(port)] for port in serial.tools.list_ports.comports()])
             self.combo1['values'] = ([item['port']+" - "+item['dev'] if len(item)==3  else item['desc'] for item in self.ser_int])
             self.combo2['values'] = ([item['port']+" - "+item['dev'] if len(item)==3  else item['desc'] for item in self.ser_int])
-            #self.combo2['values'] = ([port[0]+" - "+port[1] for port in serial.tools.list_ports.comports()])
+
     
     def show_image(self, image):
         img = cv2.imread(image)
@@ -1087,10 +924,11 @@ class TakeDialog(tkinter.Toplevel):
         cv2.imshow('image', img)
         time.sleep(1)
         #cv2.destroyAllWindows()
+        
     def destroy_image(self):
         cv2.destroyAllWindows()
-    def Take(self):
         
+    def Take(self):
         proc = multiprocessing.Process(target=self.DoTake)
         process_window = ProcessWindow(self, proc, self.S_deg)
         process_window.launch()
@@ -1102,48 +940,27 @@ class TakeDialog(tkinter.Toplevel):
             self.S_deg.write("$102=222.22\r\n".encode('ascii'))
             self.S_deg.write("$1=255\r\n".encode('ascii'))
             self.S_deg.write("G92 Z0\r\n".encode('ascii'))
-            #self.S_deg.write("g10 p1 l20 x0 y0 z0\r\n".encode('ascii'))
         for n,i in enumerate(list(range(int(self.n_deg),360+int(self.n_deg),int(self.n_deg)))):
             if self.camera1.get():
                 if self.proj.get():
-                    print('with proj')
                     for pattern in self.pattern_files:
                         self.show_image(self.pattern_dir+'/'+pattern)
                         time.sleep(0.2)
                         if self.flash.get():
                             self.S_shot.write(str('xxx 2\n').encode('ascii'))
-                            #time.sleep(10)
                             self.check_camera_process()
                             self.destroy_image()
                         else:
                             self.S_shot.write(str('xxx 1\n').encode('ascii'))
-                            #time.sleep(10)
                             self.check_camera_process()
                             self.destroy_image()
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                 else:
-                    print('without proj')
-                    #print("I'm taking picture(s) at "+str(i)+" deg!   Just "+str(self.n_shots-n)+" steps left")
                     if self.flash.get():
                         self.S_shot.write(str('xxx 2\n').encode('ascii'))
-                        #time.sleep(10)
                         self.check_camera_process()
                     else:
                         self.S_shot.write(str('xxx 1\n').encode('ascii'))
-                        #time.sleep(10)
                         self.check_camera_process()
-                    
-                    
-                    
-                    
                     
             time.sleep(2)
             if self.table.get():
@@ -1159,17 +976,7 @@ class TakeDialog(tkinter.Toplevel):
                     self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
                     self.check_stepper_position(i)
                     time.sleep(0.5)
-        #if self.table.get():
-        #    self.S_deg.write("$1=1\r\n".encode('ascii'))
-    #def show_image(self,image):
-        #img = cv2.imread(image)
-        #cv2.startWindowThread()
-        #cv2.namedWindow("image", cv2.WND_PROP_FULLSCREEN)          
-        ##cv2.setWindowProperty("image", cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN)
-        #cv2.setWindowProperty("image", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-        #cv2.imshow('image', img)
-        ##time.sleep(1)
-            
+
     def read_serial(self,serial_int):
         data_str=''
         self.S=serial_int
@@ -1177,8 +984,6 @@ class TakeDialog(tkinter.Toplevel):
             data_str = data_str + self.S.read(self.S.inWaiting()).decode('ascii')
             time.sleep(0.01)
         return data_str
-
-        
                 
     def check_stepper_position(self, angle):
         while True:
@@ -1195,14 +1000,12 @@ class TakeDialog(tkinter.Toplevel):
                         break
                     else:
                         print(str(float(a.split(',')[6][:5])*10)+' of '+str(float(angle))+' reached')
-                        #time.sleep(0.1)
         return True
         
     def check_camera_process(self):
         while True:
             a=''
             time.sleep(0.1)
-            print('check camera process')
             if (self.S_shot.inWaiting()>0):
                 a=self.read_serial(self.S_shot)
                 print(a)
@@ -1214,23 +1017,6 @@ class TakeDialog(tkinter.Toplevel):
             
         return True
         
-        
-        ##thread = threading.Thread(target=read_from_port(), args=(self.S))
-        ##thread.start()
-    
-    ##def new_win(self):
-        ##t = tkinter.Toplevel(self)
-        ##t.wm_title("Window 2")
-        ##l = tk.Label(t, text="This is window 2")
-        ##l.pack(side="top", fill="both", expand=True, padx=100, pady=100)
-    #def get_serial_int_from_combo(self, combo_value):
-        #if combo_value[:8]=='/dev/tty':
-            #return combo_value.split()[0]
-        #else:
-            #devlist=self.read_devices_list()
-            #for k in devlist.keys:
-                #if devlist(k)==
-        #pass
     def get_tty_name(self,combo_value):
         if combo_value.split()[0][:8]=='/dev/tty':
             return str(combo_value.split()[0])
@@ -1246,26 +1032,18 @@ class TakeDialog(tkinter.Toplevel):
         self.value_of_combo = self.combo1.get()
         
         self.get_serial_int()
-        ################
+        
         new_int = self.get_tty_name(self.value_of_combo)
-        #print('###############################################')
         print('new_int = '+new_int)
-        #print('###############################################')
-
-        #self.combo1['values'] = ([port[0]+" - "+port[1] for port in serial.tools.list_ports.comports()])
-        #self.ser_int = [{'port':str(port[0]), 'desc':str(port[1])} for port in serial.tools.list_ports.comports()]
         if self.S_deg:
             print('dentro')
             
             if self.S_shot:
                 if self.S_shot.port != new_int:
-                    print('porta libera')
                     self.disconnect_serial(self.S_deg)
                     self.S_deg = self.connect_serial(self.S_deg,new_int,br,0)
                 else:
-                    print('porta occupata')
                     if tkinter.messagebox.askyesno("Serial busy", "This serial interface is already reserved! Do you want to use it anyway?",icon="warning"):
-                        #print('cambio')
                         self.disconnect_serial(self.S_shot)
                         self.disconnect_serial(self.S_deg)
                         self.S_deg = self.connect_serial(self.S_deg,new_int,br,0)
@@ -1277,55 +1055,36 @@ class TakeDialog(tkinter.Toplevel):
                 self.disconnect_serial(self.S_deg)
                 self.S_deg = self.connect_serial(self.S_deg,new_int,br,0)
         else:
-            print('fuori')
             if self.S_shot:
                 if self.S_shot.port == new_int:
-                    print('porta occupata')
-                    #print(self.S_shot.port)
-                    #print(str(self.value_of_combo.split()[0]))
                     if tkinter.messagebox.askyesno("Serial busy", "This serial interface is already reserved! Do you want to use it anyway?",icon="warning"):
-                        #print('cambio')
                         self.disconnect_serial(self.S_deg)
                         self.disconnect_serial(self.S_shot)
                         self.S_deg = self.connect_serial(self.S_deg,new_int,br,0)
                         self.combo2_value.set('not set!')
                     else:
-                        #self.S_deg = self.connect_serial(self.S_deg,str(self.value_of_combo.split()[0]),br)
                         self.combo1_value.set('not set!')
                         pass
                 else:
-                    #print('S_deg in teoria')
                     self.S_deg = self.connect_serial(self.S_deg,new_int,br,0)
             else:
-                #print('S_deg in teoria')
                 self.S_deg = self.connect_serial(self.S_deg,new_int,br,0)
             
     def newselection_shot(self,evt):
-        print('newselection_shot')
         br=self.br_shot
         self.value_of_combo = self.combo2.get()
         self.get_serial_int()
-        ################
         new_int = self.get_tty_name(self.value_of_combo)
-        #print('###############################################')
         print('new_int = '+new_int)
-        #print('###############################################')
-        #self.combo2['values'] = ([port[0]+" - "+port[1] for port in serial.tools.list_ports.comports()])
-        #self.ser_int = [{'port':str(port[0]), 'desc':str(port[1])} for port in serial.tools.list_ports.comports()]
             
         if self.S_shot:
-            print('dentro')
-            
             if self.S_deg:
                 if self.S_deg.port != new_int:
-                    print('porta libera')
                     self.disconnect_serial(self.S_shot)
                     self.S_shot = self.connect_serial(self.S_shot,new_int,br,0)
-                    #print('Now serial '+self.S_deg.port+' will be used to turn the table')
+
                 else:
-                    print('porta occupata')
                     if tkinter.messagebox.askyesno("Serial busy", "This serial interface is already reserved! Do you want to use it anyway?",icon="warning"):
-                        #print('cambio')
                         self.disconnect_serial(self.S_shot)
                         self.disconnect_serial(self.S_deg)
                         self.S_shot = self.connect_serial(self.S_shot,new_int,br,1)
@@ -1333,33 +1092,23 @@ class TakeDialog(tkinter.Toplevel):
             
                     else:
                         self.combo2_value.set('not set!')
-                        #pass
+
             else:
                 self.disconnect_serial(self.S_shot)
                 self.S_shot = self.connect_serial(self.S_shot,new_int,br,0)
         else:
-            print('fuori')
             if self.S_deg:
-                print('S_deg exist')
                 if self.S_deg.port == new_int:
-                    print('porta occupata')
-                    #print(self.S_shot.port)
-                    #print(str(self.value_of_combo.split()[0]))
                     if tkinter.messagebox.askyesno("Serial busy", "This serial interface is already reserved! Do you want to use it anyway?",icon="warning"):
-                        #print('cambio')
                         self.disconnect_serial(self.S_shot)
                         self.disconnect_serial(self.S_deg)
                         self.S_shot = self.connect_serial(self.S_shot,new_int,br,1)
                         self.combo1_value.set('not set!')
                     else:
-                        #self.S_shot = self.connect_serial(self.S_shot,str(self.value_of_combo.split()[0]),br)
                         self.combo2_value.set('not set!')
-                        #pass
                 else:
-                    #print('S_shot in teoria')
                     self.S_shot = self.connect_serial(self.S_shot,new_int,br,1)
             else:
-                #print('S_shot in teoria')
                 self.S_shot = self.connect_serial(self.S_shot,new_int,br,1)
         
     def disconnect_serial(self, serial_name):
@@ -1376,15 +1125,12 @@ class TakeDialog(tkinter.Toplevel):
         s.flushInput()
         s.write('\r\n\r\n'.encode('ascii'))
         s.flushInput()
-        #print(serial_name)
-        #print(self.S_deg)
+
         if i==0:
             print('Now serial '+s_int+'@'+str(br)+' will be used to turn the table')
         elif i==1:
             print('Now serial '+s_int+'@'+str(br)+' will be used to manage cameras')
         return s
-        
-
 
     def Validate_Entry_Shots(self,event):
         e = self.entryShots.get()
@@ -1408,7 +1154,6 @@ class TakeDialog(tkinter.Toplevel):
         else:
             self.n_deg = self.check_entry_degr(e)
             self.n_shots = 360.0/self.check_entry_degr(e)
-            #round(self.n_shots)
             if self.n_shots%1 == 0.0:
                 self.entryShots.delete(0, tkinter.END)
                 self.entryShots.insert(0,str(int(self.n_shots)))
@@ -1426,7 +1171,6 @@ class TakeDialog(tkinter.Toplevel):
            val = int(string)
            return val
         except ValueError:
-           #print("I need an int!")
            return None
 
     def check_entry_degr(self,string):
@@ -1434,7 +1178,6 @@ class TakeDialog(tkinter.Toplevel):
            val = float(string)
            return val
         except ValueError:
-           #print("I need an int!")
            return None
 
     def attached_cameras(self):
@@ -1467,8 +1210,7 @@ class TakeDialog(tkinter.Toplevel):
         try:
             with open('cameras', 'rb') as f:
                 cam_dict = pickle.loads(f.read())
-            #print(cam_dict)
-            return cam_dict
+                return cam_dict
         except:
             return {}
         
@@ -1481,16 +1223,13 @@ class TakeDialog(tkinter.Toplevel):
             self.cbr['values'] = ([item['port']+" on "+item['name'] if len(item)==5  else item['desc'] for item in self.cam_int])
         
         
-    def get_cam_int(self):
-        #print('get')
-        #print("get_ser_int")   
+    def get_cam_int(self):  
         camlist=self.read_cameras_list()
         self.cam_int = []
         
         
         for sn in self.attached_cameras().keys():
             if sn in camlist.keys():
-                #self.cam_int.append({'port':str(port[0]), 'dev':str(port[1]), 'sn':str(sn),'desc':str(devlist[sn])})
                 self.cam_int.append(camlist[sn])
             else:
                 self.cam_int.append(self.attached_cameras()[sn])
@@ -1513,20 +1252,16 @@ class TakeDialog(tkinter.Toplevel):
                     return item
         
     def newselection_usb_left(self,evt):
-        #br=self.br_deg    ####bitrate
         self.value_of_combo = self.cbl.get()
         
         self.get_cam_int()
         new_int = self.get_sn_from_combo(self.value_of_combo)
         print('new_int = '+new_int)
         if self.CL:
-            #print('dentro')
-            
             if self.CR:
                 if self.CR['sn'] != new_int:
                     self.CL= self.attached_cameras()[new_int]
                 else:
-                    #print('porta occupata')
                     if tkinter.messagebox.askyesno("Camera busy", "This camera is already in use! Do you want to use it anyway?",icon="warning"):
                         self.CR=None
                         self.CL= self.attached_cameras()[new_int]
@@ -1539,7 +1274,6 @@ class TakeDialog(tkinter.Toplevel):
         else:
             if self.CR:
                 if self.CR['sn'] == new_int:
-                    #print('porta occupata')
                     if tkinter.messagebox.askyesno("Camera busy", "This camera is already in use! Do you want to use it anyway?",icon="warning"):
                         
                         self.CR=None
@@ -1554,20 +1288,15 @@ class TakeDialog(tkinter.Toplevel):
                 self.CL= self.attached_cameras()[new_int]
     
     def newselection_usb_right(self,evt):
-        
         self.value_of_combo = self.cbr.get()
-        
         self.get_cam_int()
         new_int = self.get_sn_from_combo(self.value_of_combo)
         print('new_int = '+new_int)
         if self.CR:
-            #print('dentro')
-            
             if self.CL:
                 if self.CL['sn'] != new_int:
                     self.CR= self.attached_cameras()[new_int]
                 else:
-                    #print('porta occupata')
                     if tkinter.messagebox.askyesno("Camera busy", "This camera is already in use! Do you want to use it anyway?",icon="warning"):
                         self.CL=None
                         self.CR= self.attached_cameras()[new_int]
@@ -1580,7 +1309,6 @@ class TakeDialog(tkinter.Toplevel):
         else:
             if self.CL:
                 if self.CL['sn'] == new_int:
-                    #print('porta occupata')
                     if tkinter.messagebox.askyesno("Camera busy", "This camera is already in use! Do you want to use it anyway?",icon="warning"):
                         
                         self.CL=None

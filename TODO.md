@@ -3,5 +3,5 @@
 - [x] <del>Camera preview</del>
 - [ ] Correct error on serial selection
 - [ ] Download and organize pictures in the right folder
-- [ ] Use pickle library to write and read known device list
+- [x] <del>Use pickle library to write and read known device list</del>
  
