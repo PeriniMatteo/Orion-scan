@@ -332,7 +332,9 @@ class New_Device_Dialog(tkinter.Toplevel):
                 #sn=p.findall(dev[2])[0][4:]
                 #if messagebox.askyesno('New device found!', 'Do you want to add this device to your system?'):
                     #Ask_Device_Name_Dialog(self.dev_dict,sn)
-
+class New_Camera_Dialog(tkinter.Toplevel):
+    pass
+        
 
 class ProcessWindow(tkinter.Toplevel):
     def __init__(self, parent, process, serial):
@@ -433,31 +435,20 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
                 subprocess.Popen(["gphoto2","--port="+self.CL['port'],"--capture-image-and-download",'--filename=left.jpg',"--force-overwrite"])
             except:
                 pass
-            time.sleep(1)
+            #time.sleep(1)
             try:
                 subprocess.Popen(["gphoto2","--port="+self.CR['port'],"--capture-image-and-download",'--filename=right.jpg',"--force-overwrite"])
             except:
                 pass
             time.sleep(5)
-            print('a')
-            if self.CL:   
-                #try:
-                print('left')
+            if self.CL:
                 with Image.open("left.jpg") as img_left:
-                    #img_left.show()
                     self.img_left = ImageTk.PhotoImage(img_left.resize((int(img_left.size[0]/10),int(img_left.size[1]/10)), Image.ANTIALIAS))
                     self.imglabel_left.configure(image = self.img_left)
-                    print('c')
-                #except:
-                #    pass
             if self.CR:
-                try:
-                    print('right')
-                    img_right = Image.open("right.jpg")
+                with Image.open("right.jpg") as img_right:
                     self.img_right = ImageTk.PhotoImage(img_right.resize((int(img_right.size[0]/10),int(img_right.size[1]/10)), Image.ANTIALIAS))
                     self.imglabel_right.configure(image = self.img_right)
-                except:
-                    pass
                 
         
 
@@ -580,9 +571,10 @@ class TakeDialog(tkinter.Toplevel):
         
         # create more pulldown menus
         editmenu = tkinter.Menu(menubar, tearoff=0)
-        editmenu.add_command(label="Cut", command=self.hello)
-        editmenu.add_command(label="Cameras utility", command=self.camera_utility)
-        editmenu.add_command(label="Add a new Arduino", command=self.new_device)
+        
+        editmenu.add_command(label="Check cameras", command=self.camera_utility)
+        editmenu.add_command(label="Add a new camera", command=self.new_camera)
+        editmenu.add_command(label="Add a new device", command=self.new_device)
         menubar.add_cascade(label="Utility", menu=editmenu)
         
         helpmenu = tkinter.Menu(menubar, tearoff=0)
@@ -714,6 +706,9 @@ class TakeDialog(tkinter.Toplevel):
         
     def new_device(self):
         New_Device_Dialog(self)
+        
+    def new_camera(self):
+        New_Camera_Dialog(self)
         
     def camera_utility(self):
         Check_Cameras_Dialog(self,self.CL,self.CR)
