@@ -692,6 +692,73 @@ class Check_Pattern_Image_Dialog(tkinter.Toplevel):
     def cancel(self, event=None):
         self.parent.focus_set()
         self.destroy()
+        
+########################################################################
+
+
+class Preferences_Dialog(tkinter.Toplevel):
+
+    def __init__(self, parent=None):
+
+        tkinter.Toplevel.__init__(self, parent)
+        self.transient(parent)
+
+        self.title('Preferences')
+        self.parent = parent
+        self.result = None
+        self.grid_columnconfigure(0,weight=1)
+        self.grid_rowconfigure(0,weight=1)
+        self.grid_rowconfigure(1,weight=1)
+        self.grid_rowconfigure(2,weight=1)
+        #self.detect_button = ttk.Button(self, text="Detect a new camera", command=self.foo, default=tkinter.ACTIVE)
+        #self.detect_button.grid(row=0, column=0, sticky='NSWE')
+        #self.add_button = ttk.Button(self, text="Add to know camera", command=self.foo, state=tkinter.DISABLED)
+        #self.add_button.grid(row=1, column=0, sticky='NSWE')
+        #self.remove_button = ttk.Button(self, text="Remove a camera", command=self.foo)
+        #self.remove_button.grid(row=2, column=0, sticky='NSWE')
+        self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
+        self.exit_button.grid(row=3, column=0, sticky='NSWE')
+
+        self.grab_set()
+
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+        self.focus_set()
+        self.minsize(400,300)
+        self.wait_window(self)
+        
+        
+        
+    def foo(self, event=None):
+        pass
+        
+    #def remove(self):
+        #if self.read_cameras_list() != {}:
+            #Remove_Camera_dialog(self)
+        #else:
+            #messagebox.showinfo('Warning', "There aren't any camera to remove!")
+
+
+    def cancel(self, event=None):
+        self.parent.focus_set()
+        self.destroy()
+        
+    #def read_cameras_list(self):
+        #try:
+            #with open('cameras', 'rb') as f:
+                #cam_dict = pickle.loads(f.read())
+                #return cam_dict
+        #except:
+            #return {}
+        
+
+
+
+
+
+
+########################################################################
 
 class TakeDialog(tkinter.Toplevel):
     def __init__(self,parent):
@@ -817,6 +884,7 @@ class TakeDialog(tkinter.Toplevel):
         editmenu.add_command(label="View pattern images", command=self.view_pattern_image)
         editmenu.add_command(label="Add/remove a new camera", command=self.new_camera)
         editmenu.add_command(label="Add/remove a new device", command=self.new_device)
+        editmenu.add_command(label="Preferences", command=self.preferences)
         menubar.add_cascade(label="Utility", menu=editmenu)
         
         helpmenu = tkinter.Menu(menubar, tearoff=0)
@@ -926,9 +994,13 @@ class TakeDialog(tkinter.Toplevel):
                 tkinter.messagebox.showinfo("Problem detected!", "This connection seems inactive or not properly set!",icon="warning")
         else:
             tkinter.messagebox.showinfo("Problem detected!", "This connection seems inactive or not properly set!",icon="warning")
-            
-    def hello(self):
-        print('Hello!!')
+    
+    
+    def preferences(self):
+        Preferences_Dialog(self)
+    
+    #def hello(self):
+    #    print('Hello!!')
     def about(self):
         tkinter.messagebox.showinfo("About", "Orion Scan is a open-source project under GPL licence.\nFor more details please visit:\nhttps://github.com/PeriniMatteo/Orion-scan")
         
