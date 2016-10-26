@@ -1150,8 +1150,15 @@ class TakeDialog(tkinter.Toplevel):
         process_class= Retrieve_image(self, ask_proc, camera)
         process_class.launch()
         
+    def from_int_to_file(self, n):
+        return str('DSC_'+str(n).rjust(4,'0')+'.JPG')
+        
     def ask_images_cmd(self, camera):
-        print(camera)
+        with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+camera['path']+'/'+self.from_int_to_file(camera['max_n']), \
+                                                                    "--filename="+"ciao.jpg"], stdout=subprocess.PIPE) as proc:
+            
+            return True
+        #print(camera)
     
     def get_last_image_number_and_name(self, camera):
         if camera!=None:
@@ -1179,7 +1186,29 @@ class TakeDialog(tkinter.Toplevel):
             #print(afns.max())
             #print('DSC_'+str(np.array(fns).max()).rjust(4,'0')+'.JPG')
             return afns.max(), str('DSC_'+str(np.array(fns).max()).rjust(4,'0')+'.JPG')
-        
+            
+    def get_camera_dirs(self, camera):
+        if camera!=None:
+            proc = subprocess.Popen(["gphoto2","--list-folders"], stdout=subprocess.PIPE)
+                #with open('t.txt','w') as f:
+                #    f.write(proc.stdout.read().decode('utf-8'))
+            
+            k=0
+            fn=[]
+
+            for l in proc.stdout.readlines():
+                print(l.decode('utf-8'))
+                p = re.compile('"/.*"')
+                try:
+                    path=str(p.findall(l))
+                    #print(str(path)[3:-3])
+                    fn.append(str(path)[3:-3])
+                except:
+                    pass
+            dir_list = [s for s in fn if s not in ['','/']]
+            #print(dir_list)
+            return dir_list
+            
     def read_serial(self,serial_int):
         data_str=''
         self.S=serial_int
