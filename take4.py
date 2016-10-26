@@ -555,10 +555,30 @@ class ProcessWindow(tkinter.Toplevel):
 
     def isAlive(self):
         if self.process.is_alive():
-            self.after(100, self.isAlive)
+            self.after(10, self.isAlive)
         elif self:
             messagebox.showinfo(message="3D Scan was sucessful done!", title="Finished")
             self.destroy()
+
+
+class Retrieve_image():
+    def __init__(self, parent, process, camera):
+        self.process = process
+        self.camera = camera
+
+    def launch(self):
+        self.process.start()
+        #self.after(20, self.isAlive)
+        time.sleep(0.02)
+        self.isAlive()
+            
+    def isAlive(self):
+        if self.process.is_alive():
+            time.sleep(0.02)
+            self.isAlive()
+            #self.after(20, self.isAlive)
+        else:
+            pass
             
 class Check_Cameras_Dialog(tkinter.Toplevel):
 
@@ -1037,13 +1057,29 @@ class TakeDialog(tkinter.Toplevel):
                     self.S_deg.write("$1=1\r\n".encode('ascii'))
                     self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
                     self.check_stepper_position(i)
+                    if self.CL:
+                        self.ask_images(self.CL)
+                    if self.CR:
+                        self.ask_images(self.CR)
                     self.S_deg.write("G92 Z0\r\n".encode('ascii'))
                     time.sleep(0.5)
                 else:
                     self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
+                    if self.CL:
+                        self.ask_images(self.CL)
+                    if self.CR:
+                        self.ask_images(self.CR)
                     self.check_stepper_position(i)
                     time.sleep(0.5)
 
+    def ask_images(self,camera):
+        ask_proc = multiprocessing.Process(target=self.ask_images_cmd(camera))
+        process_class= Retrieve_image(self, ask_proc, camera)
+        process_class.launch()
+        
+    def ask_images_cmd(self,camera):
+        print(camera)
+        
     def read_serial(self,serial_int):
         data_str=''
         self.S=serial_int
@@ -1059,7 +1095,7 @@ class TakeDialog(tkinter.Toplevel):
             time.sleep(0.1)
             if (self.S_deg.inWaiting()>0):
                 a=self.read_serial(self.S_deg)
-                print(a)
+                #print(a)
                 if str(a)[:10] == '<Idle,MPos':
                     if abs(float(a.split(',')[6][:5])-float(angle/10.0))<0.02:
                         print(str(float(a.split(',')[6][:5])*10)+' of '+str(float(angle))+' reached   br')
@@ -1075,10 +1111,10 @@ class TakeDialog(tkinter.Toplevel):
             time.sleep(0.1)
             if (self.S_shot.inWaiting()>0):
                 a=self.read_serial(self.S_shot)
-                print(a)
+                #print(a)
                 a = a.split('\n')[-2]
                 
-                print(a)
+                #print(a)
                 if str(a)[:4] == 'gata':
                     break
             
