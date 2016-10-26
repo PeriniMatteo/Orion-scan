@@ -972,6 +972,11 @@ class TakeDialog(tkinter.Toplevel):
         if self.ser_int == []:
             self.combo1_value.set('not set!')
             self.combo2_value.set('not set!')
+            self.combo1['values'] = self.ser_int
+            self.combo2['values'] = self.ser_int
+            self.S_shot = None
+            self.S_deg = None
+            
         else:
             self.combo1['values'] = ([item['port']+" - "+item['dev'] if len(item)==3  else item['desc'] for item in self.ser_int])
             self.combo2['values'] = ([item['port']+" - "+item['dev'] if len(item)==3  else item['desc'] for item in self.ser_int])
@@ -1280,6 +1285,11 @@ class TakeDialog(tkinter.Toplevel):
         if self.cam_int == []:
             self.cbl_value.set('not set!')
             self.cbr_value.set('not set!')
+            self.cbl['values'] = self.cam_int
+            self.cbr['values'] = self.cam_int
+            self.CL = None
+            self.CR = None
+            
         else:
             self.cbl['values'] = ([item['port']+" on "+item['name'] if len(item)==5  else item['desc'] for item in self.cam_int])
             self.cbr['values'] = ([item['port']+" on "+item['name'] if len(item)==5  else item['desc'] for item in self.cam_int])
@@ -1289,12 +1299,14 @@ class TakeDialog(tkinter.Toplevel):
         camlist=self.read_cameras_list()
         self.cam_int = []
         
-        
         for sn in self.attached_cameras().keys():
             if sn in camlist.keys():
                 self.cam_int.append(camlist[sn])
             else:
                 self.cam_int.append(self.attached_cameras()[sn])
+        print('x')
+        print(self.cam_int)
+        print('x')
         self.update_cam_combos()
         
         
