@@ -17,6 +17,7 @@ import re
 from PIL import ImageTk, Image
 import subprocess
 import pickle
+import numpy as np
 
 
 
@@ -1144,13 +1145,40 @@ class TakeDialog(tkinter.Toplevel):
                     self.check_stepper_position(i)
                     time.sleep(0.5)
 
-    def ask_images(self,camera):
+    def ask_images(self, camera):
         ask_proc = multiprocessing.Process(target=self.ask_images_cmd(camera))
         process_class= Retrieve_image(self, ask_proc, camera)
         process_class.launch()
         
-    def ask_images_cmd(self,camera):
+    def ask_images_cmd(self, camera):
         print(camera)
+    
+    def get_last_image_number_and_name(self, camera):
+        if camera!=None:
+            proc = subprocess.Popen(["gphoto2", "--port="+camera['port'], "--list-files"], stdout=subprocess.PIPE)
+
+            #with open('t.txt','w') as f:
+                #f.write(proc.stdout.read().decode('utf-8'))
+            k=0
+            fns=[]
+            #with open('t.txt','r') as f:
+                
+            for n,l in enumerate(proc.stdout.readlines()):
+                #print(l)
+                p = re.compile('DSC_\d+\.JPG')
+                try:
+                    #print(str(p.findall(l))[6:10])
+                    nn=int(str(p.findall(l).decode('utf-8'))[6:10].lstrip('0'))
+                    k+=1
+                    print(nn)
+                    fns.append(nn)
+                except:
+                    pass
+            
+            afns=np.array(fns)
+            #print(afns.max())
+            #print('DSC_'+str(np.array(fns).max()).rjust(4,'0')+'.JPG')
+            return afns.max(), str('DSC_'+str(np.array(fns).max()).rjust(4,'0')+'.JPG')
         
     def read_serial(self,serial_int):
         data_str=''
