@@ -163,6 +163,7 @@ class New_Device_Dialog(tkinter.Toplevel):
         self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
                                   parent.winfo_rooty()+50))
         self.focus_set()
+        self.minsize(400,300)
         self.wait_window(self)
         
     def remove(self):
@@ -295,6 +296,7 @@ class New_Camera_Dialog(tkinter.Toplevel):
         self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
                                   parent.winfo_rooty()+50))
         self.focus_set()
+        self.minsize(400,300)
         self.wait_window(self)
         
         
@@ -597,6 +599,7 @@ class Check_Cameras_Dialog(tkinter.Toplevel):
         self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
                                   parent.winfo_rooty()+50))
         self.focus_set()
+        self.minsize(400,300)
         self.wait_window(self)
         
     def check(self):
@@ -631,25 +634,31 @@ class Check_Pattern_Image_Dialog(tkinter.Toplevel):
 
         tkinter.Toplevel.__init__(self, parent)
         self.transient(parent)
-
+        r=5
         self.title('Show pattern images')
         self.parent = parent
         self.grid_columnconfigure(0,weight=1)
         self.grid_rowconfigure(0,weight=1)
         self.grid_rowconfigure(1,weight=1)
         self.grid_rowconfigure(2,weight=1)
-        #img = Image.new("L", [4608,3072], 'white')
+        label = {}
+        label2 = {}
         
-        for n,i in enumerate(images):
-            with Image.open(path+'/'+i) as img:
-                
-                #img.show()
-                tkinter.Label(self, image= ImageTk.PhotoImage(img.resize((int(img.size[0]/10),int(img.size[1]/10)), Image.ANTIALIAS))).grid(row=2, column=n)
+        L=[Image.open(path+'/'+i) for i in images]
+        LL=[ImageTk.PhotoImage(i.resize((int(i.size[0]/r),int(i.size[1]/r)), Image.ANTIALIAS)) for i in L]
+        for n,i in enumerate(L):
+                l=tkinter.Label(self, text=str(images[n]))
+                l.grid(row=1, column=n)
+                label[str(n)] = l
         
-        
-        
+                l=tkinter.Label(self, image= LL[n])
+                l.grid(row=2, column=n)
+                label2[str(n)] = l
+        if len(images)==0:
+            l=tkinter.Label(self, text='No valid images in this folder!')
+            l.grid(row=1, column=0)
         self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
-        self.exit_button.grid(row=4, column=0, columnspan=2, sticky='NSWE')
+        self.exit_button.grid(row=4, column=0, columnspan=1+len(images[:-1]), sticky='NSWE')
         self.exit_button
         self.grab_set()
 
@@ -657,6 +666,7 @@ class Check_Pattern_Image_Dialog(tkinter.Toplevel):
         self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
                                   parent.winfo_rooty()+50))
         self.focus_set()
+        self.minsize(400,150)
         self.wait_window(self)
 
     def cancel(self, event=None):
@@ -859,10 +869,10 @@ class TakeDialog(tkinter.Toplevel):
         self.update()
     
     def view_pattern_image(self):
-        #self.open_win_proj()
-        #if self.proj.get():
-        #    Check_Pattern_Image_Dialog(self,self.pattern_dir, self.pattern_files)
-        pass
+        self.open_win_proj()
+        if self.proj.get():
+            Check_Pattern_Image_Dialog(self,self.pattern_dir, self.pattern_files)
+        #pass
         
     def test_serial(self, s_int,i=None):
         txt=''
