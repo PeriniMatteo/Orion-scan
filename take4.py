@@ -710,6 +710,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.CL = CL
         self.CR = CR
         self.preL, self.preR, self.extensionL, self.extensionR = self.parent.return_pre_and_ext()
+        self.br_list = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 74880, 115200, 230400, 250000]
         
         
         self.grid_columnconfigure(0,weight=1)
@@ -717,36 +718,37 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.grid_rowconfigure(1,weight=1)
         self.grid_rowconfigure(2,weight=1)
         
+        ################ CAMERAS PARAMETERS ############################
         
-        l1=tkinter.Label(self, text='CAMERA LEFT PROPERTY')
-        l1.grid(row=1, column=0, columnspan=2)
+        l1 = tkinter.Label(self, text = 'CAMERA LEFT PROPERTY')
+        l1.grid(row = 1, column = 0, columnspan = 2)
         
-        l2=tkinter.Label(self, text='Image folder')
-        l2.grid(row=2, column=0, columnspan=1, sticky='E')
+        l2 = tkinter.Label(self, text = 'Image dir = ')
+        l2.grid(row = 2, column = 0, columnspan = 1, sticky = 'E')
         self.cb2_value = tkinter.StringVar()
         self.cb2_value.set('no camera found!')        ############TO CHANGE
-        self.cb2 = tkinter.ttk.Combobox(self, textvariable=self.cb2_value, postcommand = lambda : self.get_dirs(self.CL, self.cb2))
-        self.cb2.grid(column=1,row=2, sticky='WE')
+        self.cb2 = tkinter.ttk.Combobox(self, textvariable = self.cb2_value, postcommand = lambda : self.get_dirs(self.CL, self.cb2))
+        self.cb2.grid(column = 1,row = 2, sticky = 'WE')
         self.cb2.bind("<<ComboboxSelected>>", self.newselection_cb2)
         
-        l3=tkinter.Label(self, text='last image number =')
-        l3.grid(row=3, column=0, columnspan=1, sticky='E')
+        l3 = tkinter.Label(self, text = 'last image number = ')
+        l3.grid(row = 3, column = 0, columnspan = 1, sticky = 'E')
         e3txt = tkinter.StringVar()
         e3txt.set(self.get_file_number(self.CL))
-        e3 = tkinter.Entry(self,textvariable = e3txt, state=tkinter.DISABLED)
-        e3.grid(row=3, column=1, columnspan=1,sticky='WE')
+        e3 = tkinter.Entry(self,textvariable = e3txt, state = tkinter.DISABLED)
+        e3.grid(row = 3, column = 1, columnspan = 1,sticky = 'WE')
         #e3.bind("<Return>", self.Validate_Entry_Shots)
         #e3.bind("<FocusOut>", self.Validate_Entry_Shots)
         
-        l4=tkinter.Label(self, text='pre =')
-        l4.grid(row=4, column=0, columnspan=1, sticky='E')
+        l4 = tkinter.Label(self, text = 'pre = ')
+        l4.grid(row = 4, column = 0, columnspan = 1, sticky = 'E')
         e4txt = tkinter.StringVar()
         e4txt.set(self.preL)
         e4 = tkinter.Entry(self,textvariable = e4txt)
         e4.grid(row=4, column=1, columnspan=1,sticky='WE')
         e4.bind("<Return>", lambda x: self.set_variable(e4.get(), 1))
         
-        l5=tkinter.Label(self, text='extension =')
+        l5 = tkinter.Label(self, text='extension = ')
         l5.grid(row=5, column=0, columnspan=1, sticky='E')
         e5txt = tkinter.StringVar()
         e5txt.set(self.extensionL)
@@ -755,8 +757,8 @@ class Preferences_Dialog(tkinter.Toplevel):
         e5.bind("<Return>", lambda x: self.set_variable(e5.get(), 2))
         
         
-        s1 = tkinter.ttk.Separator(self, orient='vertical')
-        s1.grid(column=3,row=0,rowspan=5,sticky='NS')
+        s1 = tkinter.ttk.Separator(self, orient = 'vertical')
+        s1.grid(column = 3,row = 0,rowspan = 7,sticky = 'NS')
         
         
         
@@ -764,7 +766,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l6=tkinter.Label(self, text='CAMERA RIGHT PROPERTY')
         l6.grid(row=1, column=5, columnspan=2)
         
-        l7=tkinter.Label(self, text='Image folder')
+        l7=tkinter.Label(self, text='Images dir = ')
         l7.grid(row=2, column=5, columnspan=1, sticky='E')
         self.cb7_value = tkinter.StringVar()
         self.cb7_value.set('no camera found!')        ############TO CHANGE
@@ -772,14 +774,14 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.cb7.grid(column=6,row=2, sticky='WE')
         self.cb7.bind("<<ComboboxSelected>>", self.newselection_cb7)
         
-        l8=tkinter.Label(self, text='last image number =')
+        l8=tkinter.Label(self, text='last image number = ')
         l8.grid(row=3, column=5, columnspan=1, sticky='E')
         e8txt = tkinter.StringVar()
         e8txt.set(self.get_file_number(self.CR))
         e8 = tkinter.Entry(self,textvariable = e8txt, state=tkinter.DISABLED)
         e8.grid(row=3, column=6, columnspan=1,sticky='WE')
         
-        l9=tkinter.Label(self, text='pre =')
+        l9=tkinter.Label(self, text='pre = ')
         l9.grid(row=4, column=5, columnspan=1, sticky='E')
         e9txt = tkinter.StringVar()
         e9txt.set(self.preR)
@@ -787,7 +789,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         e9.grid(row=4, column=6, columnspan=1,sticky='WE')
         e9.bind("<Return>", lambda x: self.set_variable(e9.get(), 3))
 
-        l10=tkinter.Label(self, text='extension =')
+        l10=tkinter.Label(self, text='extension = ')
         l10.grid(row=5, column=5, columnspan=1, sticky='E')
         e10txt = tkinter.StringVar()
         e10txt.set(self.extensionR)
@@ -795,27 +797,41 @@ class Preferences_Dialog(tkinter.Toplevel):
         e10.grid(row=5, column=6, columnspan=1,sticky='WE')        
         e10.bind("<Return>", lambda x: self.set_variable(e10.get(), 4))
         
-        
-        
-        
-        
-        self.s2 = tkinter.ttk.Separator(self, orient='horizontal')
-        self.s2.grid(column=0,row=8,columnspan=10,sticky='WE')
 
-        #self.entryShotsVariable = tkinter.StringVar()
-        #self.entryShots = tkinter.Entry(self,textvariable=self.entryShotsVariable)
-        #self.entryShots.grid(column=3,row=1,columnspan=1,sticky='WE')
-        #self.entryShots.bind("<Return>", self.Validate_Entry_Shots)
-        #self.entryShots.bind("<FocusOut>", self.Validate_Entry_Shots)
+        self.s2 = tkinter.ttk.Separator(self, orient = 'horizontal')
+        self.s2.grid(column = 0,row = 8,columnspan = 10,sticky = 'WE')
+        self.s2 = tkinter.ttk.Separator(self, orient = 'horizontal')
+        self.s2.grid(column = 0,row = 9,columnspan = 10,sticky = 'WE')
         
+        ################ SERIAL PARAMETERS #############################
         
+        l11 = tkinter.Label(self, text='TABLE SERIAL PROPERTY')
+        l11.grid(row = 10, column = 0, columnspan = 2)
         
-        #self.detect_button = ttk.Button(self, text="Detect a new camera", command=self.foo, default=tkinter.ACTIVE)
-        #self.detect_button.grid(row=0, column=0, sticky='NSWE')
-        #self.add_button = ttk.Button(self, text="Add to know camera", command=self.foo, state=tkinter.DISABLED)
-        #self.add_button.grid(row=1, column=0, sticky='NSWE')
-        #self.remove_button = ttk.Button(self, text="Remove a camera", command=self.foo)
-        #self.remove_button.grid(row=2, column=0, sticky='NSWE')
+        l12 = tkinter.Label(self, text='baud rate = ')
+        l12.grid(row = 11, column = 0, columnspan = 1, sticky='E')
+        self.cb12_value = tkinter.StringVar()
+        self.cb12_value.set(str(self.parent.return_br(0)))        ############TO CHANGE
+        self.cb12 = tkinter.ttk.Combobox(self, textvariable = self.cb12_value, postcommand = lambda : self.update_br(self.cb12))
+        self.cb12.grid(row = 11, column = 1, sticky = 'WE')
+        self.cb12.bind("<<ComboboxSelected>>", self.newselection_cb12)
+        
+        s3 = tkinter.ttk.Separator(self, orient='vertical')
+        s3.grid(column=3,row=10,rowspan=4,sticky='NS')
+        
+        l15 = tkinter.Label(self, text = 'CAMERA SERIAL PROPERTY')
+        l15.grid(row = 10, column = 5, columnspan = 2)
+        
+        l16 = tkinter.Label(self, text='baud rate = ')
+        l16.grid(row = 11, column = 5, columnspan = 1, sticky='E')
+        self.cb16_value = tkinter.StringVar()
+        self.cb16_value.set(self.parent.return_br(1))        ############TO CHANGE
+        self.cb16 = tkinter.ttk.Combobox(self, textvariable = self.cb16_value, postcommand = lambda : self.update_br(self.cb16))
+        self.cb16.grid(row = 11, column = 6, sticky='WE')
+        self.cb16.bind("<<ComboboxSelected>>", self.newselection_cb16)
+        
+        self.update_button = ttk.Button(self, text="Update", command=self.update_var)
+        self.update_button.grid(row=29, column=0, columnspan=10, sticky='NSWE')
         self.exit_button = ttk.Button(self, text="Exit", command=self.quit_win)
         self.exit_button.grid(row=30, column=0, columnspan=10, sticky='NSWE')
 
@@ -827,6 +843,13 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.focus_set()
         self.minsize(400,30)
         self.wait_window(self)
+        
+    def update_var(self):
+        pass
+        
+    def update_br(self, cb_br):
+        cb_br['values'] = self.br_list
+        
     
     def set_variable(self, txt, n):
         if n==1:
@@ -865,10 +888,15 @@ class Preferences_Dialog(tkinter.Toplevel):
         combo['values'] = item_list
         
         
-    def newselection_cb2(self):
+    def newselection_cb2(self, evt):
         pass
     
-    def newselection_cb7(self):
+    def newselection_cb7(self, evt):
+        pass
+    def newselection_cb12(self, evt):
+        pass
+    
+    def newselection_cb16(self, evt):
         pass
         
     def foo(self, event=None):
@@ -1720,6 +1748,12 @@ class TakeDialog(tkinter.Toplevel):
     
     def set_extR(self, txt):
         self.extensionR = txt
+        
+    def return_br(self, n):
+        if n==0:
+            return self.br_deg
+        elif n==1:
+            return self.br_shot
     
 
 if __name__ == "__main__":
