@@ -706,12 +706,26 @@ class Preferences_Dialog(tkinter.Toplevel):
 
         self.title('Preferences')
         self.parent = parent
-        #self.result = None
         self.CL = CL
         self.CR = CR
+        
+        self.inizialize()
+        
+        self.grab_set()
+        self.protocol("WM_DELETE_WINDOW", self.quit_win)
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+        self.focus_set()
+        self.minsize(500,30)
+        self.wait_window(self)
+        
+        
+    def inizialize(self):
+        
         self.preL, self.preR, self.extensionL, self.extensionR = self.parent.return_pre_and_ext()
         self.br_list = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 74880, 115200, 230400, 250000]
-        
+        self.pathL, self.pathR = self.parent.return_paths()
+        self.br_deg, self.br_shot = self.parent.return_br()
         
         self.grid_columnconfigure(0,weight=1)
         self.grid_rowconfigure(0,weight=1)
@@ -726,7 +740,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l2 = tkinter.Label(self, text = 'Image dir = ')
         l2.grid(row = 2, column = 0, columnspan = 1, sticky = 'E')
         self.cb2_value = tkinter.StringVar()
-        self.cb2_value.set('no camera found!')        ############TO CHANGE
+        self.cb2_value.set(self.pathL)
         self.cb2 = tkinter.ttk.Combobox(self, textvariable = self.cb2_value, postcommand = lambda : self.get_dirs(self.CL, self.cb2))
         self.cb2.grid(column = 1,row = 2, sticky = 'WE')
         self.cb2.bind("<<ComboboxSelected>>", self.newselection_cb2)
@@ -737,8 +751,6 @@ class Preferences_Dialog(tkinter.Toplevel):
         e3txt.set(self.get_file_number(self.CL))
         e3 = tkinter.Entry(self,textvariable = e3txt, state = tkinter.DISABLED)
         e3.grid(row = 3, column = 1, columnspan = 1,sticky = 'WE')
-        #e3.bind("<Return>", self.Validate_Entry_Shots)
-        #e3.bind("<FocusOut>", self.Validate_Entry_Shots)
         
         l4 = tkinter.Label(self, text = 'pre = ')
         l4.grid(row = 4, column = 0, columnspan = 1, sticky = 'E')
@@ -769,7 +781,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l7=tkinter.Label(self, text='Images dir = ')
         l7.grid(row=2, column=5, columnspan=1, sticky='E')
         self.cb7_value = tkinter.StringVar()
-        self.cb7_value.set('no camera found!')        ############TO CHANGE
+        self.cb7_value.set(self.pathR)
         self.cb7 = tkinter.ttk.Combobox(self, textvariable=self.cb7_value, postcommand = lambda : self.get_dirs(self.CR, self.cb7))
         self.cb7.grid(column=6,row=2, sticky='WE')
         self.cb7.bind("<<ComboboxSelected>>", self.newselection_cb7)
@@ -811,7 +823,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l12 = tkinter.Label(self, text='baud rate = ')
         l12.grid(row = 11, column = 0, columnspan = 1, sticky='E')
         self.cb12_value = tkinter.StringVar()
-        self.cb12_value.set(str(self.parent.return_br(0)))        ############TO CHANGE
+        self.cb12_value.set(self.br_deg)
         self.cb12 = tkinter.ttk.Combobox(self, textvariable = self.cb12_value, postcommand = lambda : self.update_br(self.cb12))
         self.cb12.grid(row = 11, column = 1, sticky = 'WE')
         self.cb12.bind("<<ComboboxSelected>>", self.newselection_cb12)
@@ -825,7 +837,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l16 = tkinter.Label(self, text='baud rate = ')
         l16.grid(row = 11, column = 5, columnspan = 1, sticky='E')
         self.cb16_value = tkinter.StringVar()
-        self.cb16_value.set(self.parent.return_br(1))        ############TO CHANGE
+        self.cb16_value.set(self.br_shot)
         self.cb16 = tkinter.ttk.Combobox(self, textvariable = self.cb16_value, postcommand = lambda : self.update_br(self.cb16))
         self.cb16.grid(row = 11, column = 6, sticky='WE')
         self.cb16.bind("<<ComboboxSelected>>", self.newselection_cb16)
@@ -835,14 +847,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.exit_button = ttk.Button(self, text="Exit", command=self.quit_win)
         self.exit_button.grid(row=30, column=0, columnspan=10, sticky='NSWE')
 
-        self.grab_set()
-
-        self.protocol("WM_DELETE_WINDOW", self.quit_win)
-        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
-                                  parent.winfo_rooty()+50))
-        self.focus_set()
-        self.minsize(400,30)
-        self.wait_window(self)
+        
         
     def update_var(self):
         pass
@@ -868,20 +873,30 @@ class Preferences_Dialog(tkinter.Toplevel):
             self.extensionR = txt
             self.parent.set_extR(txt)
             print(txt)
-        #self.__init__(self.parent, self.CL, self.CR)
+        elif n==5:
+            self.pathL = txt
+            self.parent.set_pathL(txt)
+        elif n==6:
+            self.pathR = txt
+            self.parent.set_pathR(txt)
+        elif n==7:
+            self.br_deg = int(txt)
+            self.parent.set_br_deg(txt)
+        elif n==8:
+            self.br_shot = int(txt)
+            self.parent.set_br_shot(txt)
+
     
     def get_file_number(self, camera):
         if camera == None:
-            return "ciao"
+            return "camera not found!"
         else:
             return self.parent.get_last_image_number_and_name(camera)[0]
     def get_dirs(self, camera, combo):
         if camera == None:
-            self.update_combo(combo, ["ciao", "bello"])
-            #return ["ciao", "bello"]
+            self.update_combo(combo, [])
         else:
             self.update_combo(combo, self.parent.get_camera_dirs(camera))
-        #pass
     
     def update_combo(self, combo, item_list):
         
@@ -889,49 +904,30 @@ class Preferences_Dialog(tkinter.Toplevel):
         
         
     def newselection_cb2(self, evt):
-        pass
-    
+        txt = self.cb2.get()
+        self.set_variable(txt, 5)
+        
     def newselection_cb7(self, evt):
-        pass
+        txt = self.cb7.get()
+        self.set_variable(txt, 6)
+        
     def newselection_cb12(self, evt):
-        pass
+        txt = self.cb12.get()
+        self.set_variable(txt, 7)
+
     
     def newselection_cb16(self, evt):
-        pass
-        
-    def foo(self, event=None):
-        pass
-        
-    #def remove(self):
-        #if self.read_cameras_list() != {}:
-            #Remove_Camera_dialog(self)
-        #else:
-            #messagebox.showinfo('Warning', "There aren't any camera to remove!")
-
-
+        txt = self.cb16.get()
+        self.set_variable(txt, 8)
+                
     def quit_win(self, event=None):
         self.parent.focus_set()
         self.destroy()
-        
-    #def read_cameras_list(self):
-        #try:
-            #with open('cameras', 'rb') as f:
-                #cam_dict = pickle.loads(f.read())
-                #return cam_dict
-        #except:
-            #return {}
-        
-
-
-
-
-
 
 ########################################################################
 
 class TakeDialog(tkinter.Toplevel):
     def __init__(self,parent):
-        print('ciao')
         tkinter.Toplevel.__init__(self)
         self.parent = parent
         self.ser_int = []
@@ -947,6 +943,8 @@ class TakeDialog(tkinter.Toplevel):
         self.preR = 'DSC_'
         self.extensionL = '.JPG'
         self.extensionR = '.JPG'
+        self.pathL = '/store_00010001/DCIM/100D3100'
+        self.pathR = '/store_00010001/DCIM/100D3100'
         
         self.pattern_dir='~'
         self.pattern_files=[]
@@ -1171,7 +1169,7 @@ class TakeDialog(tkinter.Toplevel):
     
     
     def preferences(self):
-        Preferences_Dialog(self)
+        Preferences_Dialog(self, self.CL, self.CR)
     
     #def hello(self):
     #    print('Hello!!')
@@ -1185,7 +1183,7 @@ class TakeDialog(tkinter.Toplevel):
         New_Camera_Dialog(self)
         
     def camera_utility(self):
-        Check_Cameras_Dialog(self,self.CL,self.CR)
+        Check_Cameras_Dialog(self, self.CL, self.CR)
         
     def check_pattern_dir(self):
         n=0
@@ -1349,22 +1347,23 @@ class TakeDialog(tkinter.Toplevel):
                 #print(l)
                 p = re.compile('DSC_\d+\.JPG')
                 try:
-                    #print(str(p.findall(l))[6:10])
-                    nn=int(str(p.findall(l).decode('utf-8'))[6:10].lstrip('0'))
+                    #print(str(p.findall(l)))
+                    nn=int(str(p.findall(l.decode('utf-8')))[6:10].lstrip('0'))
                     k+=1
                     print(nn)
                     fns.append(nn)
                 except:
                     pass
             
-            afns=np.array(fns)
+            afns = np.array(fns)
+            print(afns)
             #print(afns.max())
             #print('DSC_'+str(np.array(fns).max()).rjust(4,'0')+'.JPG')
-            return afns.max(), str('DSC_'+str(np.array(fns).max()).rjust(4,'0')+'.JPG')
+            return afns.max(), str('DSC_'+str(afns.max()).rjust(4,'0')+'.JPG')
             
     def get_camera_dirs(self, camera):
         if camera!=None:
-            proc = subprocess.Popen(["gphoto2","--list-folders"], stdout=subprocess.PIPE)
+            proc = subprocess.Popen(["gphoto2", "--port="+camera['port'], "--list-folders"], stdout=subprocess.PIPE)
                 #with open('t.txt','w') as f:
                 #    f.write(proc.stdout.read().decode('utf-8'))
             
@@ -1372,10 +1371,10 @@ class TakeDialog(tkinter.Toplevel):
             fn=[]
 
             for l in proc.stdout.readlines():
-                print(l.decode('utf-8'))
+                #print(l.decode('utf-8'))
                 p = re.compile('"/.*"')
                 try:
-                    path=str(p.findall(l))
+                    path=str(p.findall(l.decode('utf-8')))
                     #print(str(path)[3:-3])
                     fn.append(str(path)[3:-3])
                 except:
@@ -1421,7 +1420,6 @@ class TakeDialog(tkinter.Toplevel):
                 #print(a)
                 if str(a)[:4] == 'gata':
                     break
-            
         return True
         
     def get_tty_name(self,combo_value):
@@ -1755,6 +1753,23 @@ class TakeDialog(tkinter.Toplevel):
         elif n==1:
             return self.br_shot
     
+    def return_paths(self):
+        return self.pathL, self.pathR
+    
+    def set_pathL(self, txt):
+        self.pathL = txt
+    
+    def set_pathR(self, txt):
+        self.pathR = txt
+    
+    def return_br(self):
+        return self.br_deg, self.br_shot
+    
+    def set_br_deg(self, txt):
+        self.br_deg = int(txt)
+        
+    def set_br_shot(self, txt):
+        self.br_shot = int(txt)
 
 if __name__ == "__main__":
     app = TakeDialog(None)
