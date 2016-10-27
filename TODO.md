@@ -1,5 +1,6 @@
 - [ ] Download and organize pictures in the right folder
 - [ ] Allow to customize parameters in a property windows
+- [ ] Use variable "pre" and "extension" to compone the right file name
 
 - [x] <del>Camera identification (like serial)</del>
 - [x] <del>Add and delete "known" cameras to/from a list</del>
