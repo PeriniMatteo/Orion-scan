@@ -866,16 +866,28 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.cb16.bind("<<ComboboxSelected>>", self.newselection_cb16)
         
         
-        
+        self.s3 = tkinter.ttk.Separator(self, orient = 'horizontal')
+        self.s3.grid(column = 0,row = 18,columnspan = 10,sticky = 'WE')
+        self.s3 = tkinter.ttk.Separator(self, orient = 'horizontal')
+        self.s3.grid(column = 0,row = 19,columnspan = 10,sticky = 'WE')
         ################ PROJECTOR? ####################################
+        
+        
+        
+        #self.s4 = tkinter.ttk.Separator(self, orient = 'horizontal')
+        #self.s4.grid(column = 0,row = 28,columnspan = 10,sticky = 'WE')
+        #self.s4 = tkinter.ttk.Separator(self, orient = 'horizontal')
+        #self.s4.grid(column = 0,row = 29,columnspan = 10,sticky = 'WE')
         
         ################## TIMING CAMERAS ##############################
         
         
-        self.s3 = tkinter.ttk.Separator(self, orient = 'horizontal')
-        self.s3.grid(column = 0,row = 48,columnspan = 10,sticky = 'WE')
-        self.s3 = tkinter.ttk.Separator(self, orient = 'horizontal')
-        self.s3.grid(column = 0,row = 49,columnspan = 10,sticky = 'WE')
+        
+        
+        #self.s10 = tkinter.ttk.Separator(self, orient = 'horizontal')
+        #self.s10.grid(column = 0,row = 48,columnspan = 10,sticky = 'WE')
+        #self.s10 = tkinter.ttk.Separator(self, orient = 'horizontal')
+        #self.s10.grid(column = 0,row = 49,columnspan = 10,sticky = 'WE')
         
         ################## PATH CONFIGURATION ##########################
         
@@ -924,12 +936,10 @@ class Preferences_Dialog(tkinter.Toplevel):
                     except:
                         pass
             
-            if sl.count(sl[0]) == len(sl): #check if all the element in the list are identical
-                print('OK')
-                print('n = ',n)
+            if sl.count(sl[0]) == len(sl): #check if all the elements in the list are identical
                 pre, ext = sl[0].split()
-                print('pre = ',pre)
-                print('ext = ',ext)
+                #print('pre = ',pre)
+                #print('ext = ',ext)
                 if n == 0:
                     e.set(pre)
                     self.parent.set_preL(pre)
@@ -940,7 +950,6 @@ class Preferences_Dialog(tkinter.Toplevel):
                     e.set(pre)
                     self.parent.set_preR(pre)
                 elif n == 3:
-                    print(ext)
                     e.set(ext)
                     self.parent.set_extR(ext)
         else:
@@ -1412,34 +1421,52 @@ class TakeDialog(tkinter.Toplevel):
                     self.S_deg.write("$1=1\r\n".encode('ascii'))
                     self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
                     self.check_stepper_position(i)
-                    if self.CL:
-                        self.ask_images(self.CL)
-                    if self.CR:
-                        self.ask_images(self.CR)
+                    #if self.CL:
+                    #    self.ask_images(self.CL, 0)
+                    #if self.CR:
+                    #    self.ask_images(self.CR, 1)
                     self.S_deg.write("G92 Z0\r\n".encode('ascii'))
                     time.sleep(0.5)
                 else:
                     self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
                     if self.CL:
-                        self.ask_images(self.CL)
+                        self.ask_images(self.CL, 0, i)
                     if self.CR:
-                        self.ask_images(self.CR)
+                        self.ask_images(self.CR, 1, i)
                     self.check_stepper_position(i)
                     time.sleep(0.5)
 
-    def ask_images(self, camera):
-        ask_proc = multiprocessing.Process(target=self.ask_images_cmd(camera))
-        process_class= Retrieve_image(self, ask_proc, camera)
+    def ask_images(self, camera, LR, i):
+        ask_proc = multiprocessing.Process(target=self.ask_images_and_save(camera, LR, i))
+        process_class= Retrieve_image(self, ask_proc, camera, LR, i)
         process_class.launch()
         
-    def from_int_to_file(self, n):
-        return str('DSC_'+str(n).rjust(4,'0')+'.JPG')
-        
-    def ask_images_cmd(self, camera):
-        with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+camera['path']+'/'+self.from_int_to_file(camera['max_n']), \
-                                                                    "--filename="+"ciao.jpg"], stdout=subprocess.PIPE) as proc:
+    def from_int_to_camera_file(self, LR, n):
+        if LR == 0:
+            return str(self.preL+str(n).rjust(4,'0')+self.extensionL)
+        elif LR == 1:
+            return str(self.preR+str(n).rjust(4,'0')+self.extensionR)
+        else:
+            tkinter.messagebox.showinfo("Warning", 'Camera not found!')
             
-            return True
+    def from_int_to_dest_file(self, LR, n, deg):
+        if LR == 0:
+            return str(self.preL+str(n).rjust(4,'0')+'_'+deg+'_left'+self.extensionL)
+        elif LR == 1:
+            return str(self.preR+str(n).rjust(4,'0')+'_'+deg+'_right'+self.extensionR)
+        else:
+            tkinter.messagebox.showinfo("Warning", 'Camera not found!')
+        
+    def ask_images_and_save(self,camera, LR, i):
+        if LR == 0:
+            subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, camera['max_n']), \
+                                    "--filename="+self.save_dir+'/'+self.from_int_to_dest_file(LR, camera['max_n'], i)], stdout=subprocess.PIPE)
+        else:  
+            subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathR+'/'+self.from_int_to_camera_file(LR, camera['max_n']), \
+                                    "--filename="+self.save_dir+'/'+self.from_int_to_dest_file(LR, camera['max_n'], i)], stdout=subprocess.PIPE)
+            
+        
+        #return True
         #print(camera)
     def return_pre_and_ext(self):
         return self.preL, self.preR, self.extensionL, self.extensionR
