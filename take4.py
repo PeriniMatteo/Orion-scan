@@ -569,7 +569,7 @@ class ProcessWindow(tkinter.Toplevel):
 
 
 class Retrieve_image():
-    def __init__(self, parent, process, camera):
+    def __init__(self, parent, process, camera, LR, i):
         self.process = process
         self.camera = camera
 
@@ -1041,7 +1041,63 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.parent.focus_set()
         self.destroy()
 
+class Ask_scan_name(tkinter.Toplevel):
+    def __init__(self, parent):
 
+        tkinter.Toplevel.__init__(self, parent)
+        self.transient(parent)
+
+        self.title('Acquisition name')
+        self.parent = parent
+
+        
+        
+        for i in range(2):
+            self.grid_columnconfigure(i,weight=1)
+        
+        
+        l1 = tkinter.Label(self, text = 'GIVE ME A NAME FOR THIS SCAN SESSION')
+        l1.grid(row = 1, column = 0, columnspan = 2)
+        
+        # left number
+        l3 = tkinter.Label(self, text = 'Name = ')
+        l3.grid(row = 3, column = 0, columnspan = 1, sticky = 'E')
+        #self.e3txt = tkinter.StringVar()
+        #self.e3txt.set('')
+        #self.e3 = tkinter.Entry(self,textvariable = self.e3txt)
+        self.e3 = tkinter.Entry(self,text='')
+        self.e3.grid(row = 3, column = 1, columnspan = 1,sticky = 'WE')
+        self.e3.bind("<Return>", self.ok)
+        
+        
+        self.ok_button = ttk.Button(self, text="OK", command=self.ok)
+        self.ok_button.grid(row=6, column=0, columnspan=2, sticky='NSWE')
+        self.cancel_button = ttk.Button(self, text="Cancel scan process", command=self.cancel)
+        self.cancel_button.grid(row=8, column=0, columnspan=2, sticky='NSWE')
+        
+        self.grab_set()
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+        self.focus_set()
+        self.minsize(700,30)
+        self.wait_window(self)
+        
+    
+    def ok(self, evt=None):
+        save_dir = self.e3.get()
+        if save_dir != '':
+            self.parent.set_save_dir(save_dir)
+            self.parent.return_true()
+            self.quit()
+    
+    def cancel(self, event=None):
+        self.parent.return_false()
+        self.quit()
+        
+    def quit(self):
+        self.parent.focus_set()
+        self.destroy()
 
 class TakeDialog(tkinter.Toplevel):
     def __init__(self,parent):
@@ -1056,6 +1112,8 @@ class TakeDialog(tkinter.Toplevel):
         self.br_shot = 9600
         self.CL = None
         self.CR = None
+        self.nL = 0
+        self.nR = 0
         self.preL = 'DSC_'
         self.preR = 'DSC_'
         self.extensionL = '.JPG'
@@ -1067,6 +1125,10 @@ class TakeDialog(tkinter.Toplevel):
         self.pattern_dir = '~'
         self.pattern_files=[]
         self.dir_opt = options = {}
+        self.save_dir = '.'
+        
+        
+        
         options['initialdir'] = self.pattern_dir
         options['mustexist'] = False
 
@@ -1075,6 +1137,7 @@ class TakeDialog(tkinter.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.q)
         self.initialize()
         self.i=0
+        
         
         
     def q(self):
@@ -1380,10 +1443,15 @@ class TakeDialog(tkinter.Toplevel):
         cv2.destroyAllWindows()
         
     def Take(self):
-        proc = multiprocessing.Process(target=self.DoTake)
-        process_window = ProcessWindow(self, proc, self.S_deg)
-        process_window.launch()
-        
+        if Ask_scan_name(self):
+            tkinter.messagebox.showinfo('Message', 'Scan data will be put in'+self.acq_img_dir+self.save_dir+' !')
+            os.mkdir(os.path.abspath(self.acq_img_dir+self.save_dir))
+            proc = multiprocessing.Process(target=self.DoTake)
+            process_window = ProcessWindow(self, proc, self.S_deg)
+            process_window.launch()
+        else:
+            tkinter.messagebox.showinfo('Message', 'I need a valid name to continue not: '+self.save_dir+' !')
+            
     def DoTake(self):
         if self.table.get():
             self.S_deg.write("\r\n\r\n".encode('ascii'))
@@ -1451,21 +1519,28 @@ class TakeDialog(tkinter.Toplevel):
             
     def from_int_to_dest_file(self, LR, n, deg):
         if LR == 0:
-            return str(self.preL+str(n).rjust(4,'0')+'_'+deg+'_left'+self.extensionL)
+            return str(self.preL+str(n).rjust(4,'0')+'_'+str(deg)+'_left'+self.extensionL)
         elif LR == 1:
-            return str(self.preR+str(n).rjust(4,'0')+'_'+deg+'_right'+self.extensionR)
+            return str(self.preR+str(n).rjust(4,'0')+'_'+str(deg)+'_right'+self.extensionR)
         else:
             tkinter.messagebox.showinfo("Warning", 'Camera not found!')
         
     def ask_images_and_save(self,camera, LR, i):
+        if i==0:
+            if LR == 0:
+                self.nL = self.get_last_image_number_and_name(camera)[0]
+            if LR == 1:
+                self.nR = self.get_last_image_number_and_name(camera)[0]
         if LR == 0:
-            subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, camera['max_n']), \
-                                    "--filename="+self.save_dir+'/'+self.from_int_to_dest_file(LR, camera['max_n'], i)], stdout=subprocess.PIPE)
+            with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL), \
+                                    "--filename="+self.save_dir+'/'+self.from_int_to_dest_file(LR, self.nL, i)], stdout=subprocess.PIPE):
+                #self.nL+=1
+                pass
         else:  
-            subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathR+'/'+self.from_int_to_camera_file(LR, camera['max_n']), \
-                                    "--filename="+self.save_dir+'/'+self.from_int_to_dest_file(LR, camera['max_n'], i)], stdout=subprocess.PIPE)
-            
-        
+            with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathR+'/'+self.from_int_to_camera_file(LR, self.nR), \
+                                    "--filename="+self.save_dir+'/'+self.from_int_to_dest_file(LR, self.nR, i)], stdout=subprocess.PIPE):
+                #self.nR+=1
+                pass
         #return True
         #print(camera)
     def return_pre_and_ext(self):
@@ -1917,6 +1992,16 @@ class TakeDialog(tkinter.Toplevel):
         
     def set_pattern_dir(self,path):
         self.pattern_dir = path
+    
+    def return_true(self):
+        return True
+    
+    def return_false(self):
+        return False
+    
+    def set_save_dir(self, txt):
+        self.save_dir = txt
+    
         
 if __name__ == "__main__":
     app = TakeDialog(None)
