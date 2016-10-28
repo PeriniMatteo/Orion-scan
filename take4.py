@@ -769,6 +769,8 @@ class Preferences_Dialog(tkinter.Toplevel):
         e4 = tkinter.Entry(self,textvariable = e4txt)
         e4.grid(row=4, column=1, columnspan=1,sticky='WE')
         e4.bind("<Return>", lambda x: self.set_variable(e4.get(), 1))
+        b4 = ttk.Button(self, text="get from camera", command=lambda : self.get_pre_and_ext_from_camera(self.CL, e4txt, 0))
+        b4.grid(row=4, column=2, columnspan=1, sticky='NSWE')
         
         # left extension
         l5 = tkinter.Label(self, text='extension = ')
@@ -778,6 +780,8 @@ class Preferences_Dialog(tkinter.Toplevel):
         e5 = tkinter.Entry(self,textvariable = e5txt)
         e5.grid(row=5, column=1, columnspan=1,sticky='WE')   
         e5.bind("<Return>", lambda x: self.set_variable(e5.get(), 2))
+        b5 = ttk.Button(self, text="get from camera", command=lambda : self.get_pre_and_ext_from_camera(self.CL, e5txt, 1))
+        b5.grid(row=5, column=2, columnspan=1, sticky='NSWE')
         
         
         s1 = tkinter.ttk.Separator(self, orient = 'vertical')
@@ -812,8 +816,8 @@ class Preferences_Dialog(tkinter.Toplevel):
         e9 = tkinter.Entry(self,textvariable = e9txt)
         e9.grid(row=4, column=6, columnspan=1,sticky='WE')
         e9.bind("<Return>", lambda x: self.set_variable(e9.get(), 3))
-        #b9 = ttk.Button(self, text="get from camera", command=lambda : self.get_pre_and_ext_from_camera(camera))
-        #b9.grid(row=4, column=7, columnspan=1, sticky='NSWE')
+        b9 = ttk.Button(self, text="get from camera", command=lambda : self.get_pre_and_ext_from_camera(self.CR, e9txt, 2))
+        b9.grid(row=4, column=7, columnspan=1, sticky='NSWE')
 
         # right extension
         l10=tkinter.Label(self, text='extension = ')
@@ -823,6 +827,8 @@ class Preferences_Dialog(tkinter.Toplevel):
         e10 = tkinter.Entry(self,textvariable = e10txt)
         e10.grid(row=5, column=6, columnspan=1,sticky='WE')        
         e10.bind("<Return>", lambda x: self.set_variable(e10.get(), 4))
+        b10 = ttk.Button(self, text="get from camera", command=lambda : self.get_pre_and_ext_from_camera(self.CR, e10txt, 3))
+        b10.grid(row=5, column=7, columnspan=1, sticky='NSWE')
         
 
         self.s2 = tkinter.ttk.Separator(self, orient = 'horizontal')
@@ -902,10 +908,46 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.exit_button.grid(row=80, column=0, columnspan=10, sticky='NSWE')
 
 
-        
-    #def get_pre_and_ext_from_camera(self, camera):
-        #pass
-
+            
+    def get_pre_and_ext_from_camera(self, camera, e, n):
+        if camera!=None:
+            proc = subprocess.Popen(["gphoto2", "--port="+camera['port'], "--list-files"], stdout=subprocess.PIPE)
+                
+            sl=[]
+            for l in proc.stdout.readlines():
+                if l.decode('utf-8')[0]=='#':
+                    try:
+                        #print(l.decode('utf-8'))
+                        nn=str(re.sub('\d{3,5}', ' ',l.decode('utf-8').split()[1]))
+                        print(nn)
+                        sl.append(nn)
+                    except:
+                        pass
+            
+            if sl.count(sl[0]) == len(sl): #check if all the element in the list are identical
+                print('OK')
+                print('n = ',n)
+                pre, ext = sl[0].split()
+                print('pre = ',pre)
+                print('ext = ',ext)
+                if n == 0:
+                    e.set(pre)
+                    self.parent.set_preL(pre)
+                elif n == 1:
+                    e.set(ext)
+                    self.parent.set_extL(ext)
+                elif n == 2:
+                    e.set(pre)
+                    self.parent.set_preR(pre)
+                elif n == 3:
+                    print(ext)
+                    e.set(ext)
+                    self.parent.set_extR(ext)
+        else:
+            tkinter.messagebox.showinfo("No camera found!", "Please check if a camera is connected and if it is selected as used camera in the main window!",icon="warning")
+                
+                
+                
     def get_new_path(self,e, n):
         new_path = filedialog.askdirectory(initialdir=e.get(), title='Please select a directory')
         if  os.path.abspath(new_path) !=  os.path.abspath(e.get()):
@@ -1419,13 +1461,13 @@ class TakeDialog(tkinter.Toplevel):
                     #print(str(p.findall(l)))
                     nn=int(str(p.findall(l.decode('utf-8')))[6:10].lstrip('0'))
                     k+=1
-                    print(nn)
+                    #print(nn)
                     fns.append(nn)
                 except:
                     pass
             
             afns = np.array(fns)
-            print(afns)
+            #print(afns)
             #print(afns.max())
             #print('DSC_'+str(np.array(fns).max()).rjust(4,'0')+'.JPG')
             return afns.max(), str('DSC_'+str(afns.max()).rjust(4,'0')+'.JPG')
