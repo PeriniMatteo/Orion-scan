@@ -18,6 +18,7 @@ from PIL import ImageTk, Image
 import subprocess
 import pickle
 import numpy as np
+import os
 
 
 
@@ -698,8 +699,7 @@ class Check_Pattern_Image_Dialog(tkinter.Toplevel):
     def cancel(self, event=None):
         self.parent.focus_set()
         self.destroy()
-        
-########################################################################
+
 
 
 class Preferences_Dialog(tkinter.Toplevel):
@@ -734,6 +734,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         
         for i in range(6):
             self.grid_columnconfigure(i,weight=1)
+        
         self.grid_rowconfigure(0,weight=1)
         self.grid_rowconfigure(1,weight=1)
         self.grid_rowconfigure(2,weight=1)
@@ -748,7 +749,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l2.grid(row = 2, column = 0, columnspan = 1, sticky = 'E')
         self.cb2_value = tkinter.StringVar()
         self.cb2_value.set(self.pathL)
-        self.cb2 = tkinter.ttk.Combobox(self, textvariable = self.cb2_value, postcommand = lambda : self.get_dirs(self.CL, self.cb2))
+        self.cb2 = tkinter.ttk.Combobox(self, textvariable = self.cb2_value, postcommand = lambda : self.get_dirs(self.CL, self.cb2), width=30)
         self.cb2.grid(column = 1,row = 2, sticky = 'WE')
         self.cb2.bind("<<ComboboxSelected>>", self.newselection_cb2)
         
@@ -782,9 +783,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         s1 = tkinter.ttk.Separator(self, orient = 'vertical')
         s1.grid(column = 3,row = 0,rowspan = 7,sticky = 'NS')
         
-        
-        
-        
+    
         l6=tkinter.Label(self, text='CAMERA RIGHT PROPERTY')
         l6.grid(row=1, column=5, columnspan=2)
         
@@ -793,7 +792,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l7.grid(row=2, column=5, columnspan=1, sticky='E')
         self.cb7_value = tkinter.StringVar()
         self.cb7_value.set(self.pathR)
-        self.cb7 = tkinter.ttk.Combobox(self, textvariable=self.cb7_value, postcommand = lambda : self.get_dirs(self.CR, self.cb7))
+        self.cb7 = tkinter.ttk.Combobox(self, textvariable=self.cb7_value, postcommand = lambda : self.get_dirs(self.CR, self.cb7), width=30)
         self.cb7.grid(column=6,row=2, sticky='WE')
         self.cb7.bind("<<ComboboxSelected>>", self.newselection_cb7)
         
@@ -813,6 +812,8 @@ class Preferences_Dialog(tkinter.Toplevel):
         e9 = tkinter.Entry(self,textvariable = e9txt)
         e9.grid(row=4, column=6, columnspan=1,sticky='WE')
         e9.bind("<Return>", lambda x: self.set_variable(e9.get(), 3))
+        #b9 = ttk.Button(self, text="get from camera", command=lambda : self.get_pre_and_ext_from_camera(camera))
+        #b9.grid(row=4, column=7, columnspan=1, sticky='NSWE')
 
         # right extension
         l10=tkinter.Label(self, text='extension = ')
@@ -859,15 +860,63 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.cb16.bind("<<ComboboxSelected>>", self.newselection_cb16)
         
         
+        
+        ################ PROJECTOR? ####################################
+        
+        ################## TIMING CAMERAS ##############################
+        
+        
+        self.s3 = tkinter.ttk.Separator(self, orient = 'horizontal')
+        self.s3.grid(column = 0,row = 48,columnspan = 10,sticky = 'WE')
+        self.s3 = tkinter.ttk.Separator(self, orient = 'horizontal')
+        self.s3.grid(column = 0,row = 49,columnspan = 10,sticky = 'WE')
+        
+        ################## PATH CONFIGURATION ##########################
+        
+        
+        l50 = tkinter.Label(self, text='PATHS CONFIGURATION')
+        l50.grid(row = 50, column = 0, columnspan = 7, sticky='WE')
+        
+        l51 = tkinter.Label(self, text='Acquired images folder = ')
+        l51.grid(row = 51, column = 0, columnspan = 1, sticky='E')
+        e51txt = tkinter.StringVar()
+        e51txt.set(self.parent.return_default_paths()[0])
+        e51 = tkinter.Entry(self,textvariable = e51txt, state=tkinter.DISABLED, width=40)
+        e51.grid(row=51, column=1, columnspan=5,sticky='WE')
+        b51 = ttk.Button(self, text="change", command=lambda : self.get_new_path(e51txt, 0))
+        b51.grid(row=51, column=6, columnspan=2, sticky='NSWE')
+        
+        l52 = tkinter.Label(self, text='Pattern images folder = ')
+        l52.grid(row = 52, column = 0, columnspan = 1, sticky='E')
+        e52txt = tkinter.StringVar()
+        e52txt.set(self.parent.return_default_paths()[1])
+        e52 = tkinter.Entry(self,textvariable = e52txt, state=tkinter.DISABLED)
+        e52.grid(row=52, column=1, columnspan=5,sticky='WE')
+        b52 = ttk.Button(self, text="change", command=lambda : self.get_new_path(e52txt, 1))
+        b52.grid(row=52, column=6, columnspan=2, sticky='NSWE')
+        
+        ################## OTHER COMMANDS ##############################
         self.update_button = ttk.Button(self, text="Update", command=self.update_var)
-        self.update_button.grid(row=29, column=0, columnspan=10, sticky='NSWE')
+        self.update_button.grid(row=79, column=0, columnspan=10, sticky='NSWE')
         self.exit_button = ttk.Button(self, text="Exit", command=self.quit_win)
-        self.exit_button.grid(row=30, column=0, columnspan=10, sticky='NSWE')
+        self.exit_button.grid(row=80, column=0, columnspan=10, sticky='NSWE')
+
 
         
-        
+    #def get_pre_and_ext_from_camera(self, camera):
+        #pass
+
+    def get_new_path(self,e, n):
+        new_path = filedialog.askdirectory(initialdir=e.get(), title='Please select a directory')
+        if  os.path.abspath(new_path) !=  os.path.abspath(e.get()):
+            if tkinter.messagebox.askyesno("Changing Folder", "The current folder is:\n"+os.path.abspath(e.get())+"\nAre you sure to change it with:\n"+os.path.abspath(new_path),icon="warning"):
+                e.set(new_path)
+                if n == 0:
+                    self.parent.set_acq_img_dir(os.path.abspath(new_path))
+                elif n == 1:
+                    self.parent.set_pattern_dir(os.path.abspath(new_path))
     def update_var(self):
-        pass
+        pass1
         
     def update_br(self, cb_br):
         cb_br['values'] = self.br_list
@@ -941,7 +990,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.parent.focus_set()
         self.destroy()
 
-########################################################################
+
 
 class TakeDialog(tkinter.Toplevel):
     def __init__(self,parent):
@@ -963,7 +1012,8 @@ class TakeDialog(tkinter.Toplevel):
         self.pathL = '/store_00010001/DCIM/100D3100'
         self.pathR = '/store_00010001/DCIM/100D3100'
         
-        self.pattern_dir='~'
+        self.acq_img_dir = './acquired_images/'
+        self.pattern_dir = '~'
         self.pattern_files=[]
         self.dir_opt = options = {}
         options['initialdir'] = self.pattern_dir
@@ -1789,7 +1839,16 @@ class TakeDialog(tkinter.Toplevel):
         
     def set_br_shot(self, txt):
         self.br_shot = int(txt)
-
+    
+    def return_default_paths(self):
+        return self.acq_img_dir, self.pattern_dir
+    
+    def set_acq_img_dir(self,path):
+        self.acq_img_dir = path
+        
+    def set_pattern_dir(self,path):
+        self.pattern_dir = path
+        
 if __name__ == "__main__":
     app = TakeDialog(None)
     app.title('Take window')
