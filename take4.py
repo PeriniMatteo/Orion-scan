@@ -353,7 +353,7 @@ class New_Camera_Dialog(tkinter.Toplevel):
         
     def detect(self):
         print('detect')
-        self.cam_dict=None
+        self.cam_dict={}
         self.plugged_in_cameras = self.attached_cameras()
         if self.plugged_in_cameras=={}:
             print('no devices detected')
@@ -385,7 +385,7 @@ class New_Camera_Dialog(tkinter.Toplevel):
                         
             else:
                 self.add_button.config(state=tkinter.ACTIVE)
-                txt='\nUse the "Add to know cameras" button to put it in your list.\n'
+                txt='\nAn unknow camera was found!\nUse the "Add to know cameras" button to put it in your list.\n'
                 messagebox.showinfo('Unknow camera found!', txt)
                 
 
@@ -393,13 +393,13 @@ class New_Camera_Dialog(tkinter.Toplevel):
         if self.cam_dict != {}:
             for k in self.plugged_in_cameras.keys():
                 if k in self.cam_dict.keys():
-                    messagebox.showinfo('', 'Camera '+self.cam_dict['sn']+' is already in your list.')
+                    messagebox.showinfo('', 'Camera '+self.cam_dict[k]['sn']+' is already in your list.')
                 else:
-                    if messagebox.askyesno('New camera found!', self.plugged_in_cameras['sn']+'Found!\nDo you want to add this camera to your system?'):
-                        Ask_Camera_Name_Dialog(self, self.cam_dict, self.plugged_in_cameras, self.plugged_in_cameras[k])
+                    if messagebox.askyesno('New camera found!', self.plugged_in_cameras[k]['sn']+'Found!\nDo you want to add this camera to your system?'):
+                        Ask_Camera_Name_Dialog(self, self.cam_dict, self.plugged_in_cameras, k)
                         self.write_cameras_list(self.cam_dict)
         else:
-            self.cam_dict={}
+            #self.cam_dict={}
             Ask_Camera_Name_Dialog(self, self.cam_dict, self.plugged_in_cameras)
             self.write_cameras_list(self.cam_dict)
             if len(self.plugged_in_cameras.keys())>1:
@@ -419,6 +419,7 @@ class Ask_Camera_Name_Dialog(simpledialog.Dialog):
         self.transient(parent)
         self.cam_dict = cam_dict
         self.new_dict = new_dict
+        self.add_list = [k for k in self.new_dict.keys() if k not in self.cam_dict.keys()]
         self.title('Choose a description for your new Camera!')
         self.transient(parent)
         self.parent = parent
@@ -430,7 +431,7 @@ class Ask_Camera_Name_Dialog(simpledialog.Dialog):
         if sn:
             self.e1_text.set(str(sn))
         else:
-            self.e1_text.set(list(self.new_dict.keys())[0])
+            self.e1_text.set(self.add_list[0])
         self.e1 = tkinter.Entry(self,textvariable=self.e1_text)
         self.e1.config(state=tkinter.DISABLED)
         self.e2 = tkinter.Entry(self)
@@ -449,7 +450,11 @@ class Ask_Camera_Name_Dialog(simpledialog.Dialog):
         
     def ok(self):
         first = self.e1.get()
+        print(first)
         second = self.e2.get()
+        print(second)
+        print('new_dict =\n', self.new_dict)
+        print('cam_dict =\n', self.new_dict)
         self.new_dict[str(first)]['desc'] = str(second)
         self.cam_dict[str(first)] = self.new_dict[str(first)]
         
@@ -716,7 +721,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
                                   parent.winfo_rooty()+50))
         self.focus_set()
-        self.minsize(500,30)
+        self.minsize(700,30)
         self.wait_window(self)
         
         
@@ -727,7 +732,8 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.pathL, self.pathR = self.parent.return_paths()
         self.br_deg, self.br_shot = self.parent.return_br()
         
-        self.grid_columnconfigure(0,weight=1)
+        for i in range(6):
+            self.grid_columnconfigure(i,weight=1)
         self.grid_rowconfigure(0,weight=1)
         self.grid_rowconfigure(1,weight=1)
         self.grid_rowconfigure(2,weight=1)
@@ -737,6 +743,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l1 = tkinter.Label(self, text = 'CAMERA LEFT PROPERTY')
         l1.grid(row = 1, column = 0, columnspan = 2)
         
+        # left path
         l2 = tkinter.Label(self, text = 'Image dir = ')
         l2.grid(row = 2, column = 0, columnspan = 1, sticky = 'E')
         self.cb2_value = tkinter.StringVar()
@@ -745,6 +752,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.cb2.grid(column = 1,row = 2, sticky = 'WE')
         self.cb2.bind("<<ComboboxSelected>>", self.newselection_cb2)
         
+        # left number
         l3 = tkinter.Label(self, text = 'last image number = ')
         l3.grid(row = 3, column = 0, columnspan = 1, sticky = 'E')
         e3txt = tkinter.StringVar()
@@ -752,6 +760,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         e3 = tkinter.Entry(self,textvariable = e3txt, state = tkinter.DISABLED)
         e3.grid(row = 3, column = 1, columnspan = 1,sticky = 'WE')
         
+        # left pre
         l4 = tkinter.Label(self, text = 'pre = ')
         l4.grid(row = 4, column = 0, columnspan = 1, sticky = 'E')
         e4txt = tkinter.StringVar()
@@ -760,6 +769,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         e4.grid(row=4, column=1, columnspan=1,sticky='WE')
         e4.bind("<Return>", lambda x: self.set_variable(e4.get(), 1))
         
+        # left extension
         l5 = tkinter.Label(self, text='extension = ')
         l5.grid(row=5, column=0, columnspan=1, sticky='E')
         e5txt = tkinter.StringVar()
@@ -778,6 +788,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l6=tkinter.Label(self, text='CAMERA RIGHT PROPERTY')
         l6.grid(row=1, column=5, columnspan=2)
         
+        # right path
         l7=tkinter.Label(self, text='Images dir = ')
         l7.grid(row=2, column=5, columnspan=1, sticky='E')
         self.cb7_value = tkinter.StringVar()
@@ -786,6 +797,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.cb7.grid(column=6,row=2, sticky='WE')
         self.cb7.bind("<<ComboboxSelected>>", self.newselection_cb7)
         
+        # right number
         l8=tkinter.Label(self, text='last image number = ')
         l8.grid(row=3, column=5, columnspan=1, sticky='E')
         e8txt = tkinter.StringVar()
@@ -793,6 +805,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         e8 = tkinter.Entry(self,textvariable = e8txt, state=tkinter.DISABLED)
         e8.grid(row=3, column=6, columnspan=1,sticky='WE')
         
+        # right pre
         l9=tkinter.Label(self, text='pre = ')
         l9.grid(row=4, column=5, columnspan=1, sticky='E')
         e9txt = tkinter.StringVar()
@@ -801,6 +814,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         e9.grid(row=4, column=6, columnspan=1,sticky='WE')
         e9.bind("<Return>", lambda x: self.set_variable(e9.get(), 3))
 
+        # right extension
         l10=tkinter.Label(self, text='extension = ')
         l10.grid(row=5, column=5, columnspan=1, sticky='E')
         e10txt = tkinter.StringVar()
@@ -820,6 +834,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l11 = tkinter.Label(self, text='TABLE SERIAL PROPERTY')
         l11.grid(row = 10, column = 0, columnspan = 2)
         
+        # baud rate table
         l12 = tkinter.Label(self, text='baud rate = ')
         l12.grid(row = 11, column = 0, columnspan = 1, sticky='E')
         self.cb12_value = tkinter.StringVar()
@@ -834,6 +849,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l15 = tkinter.Label(self, text = 'CAMERA SERIAL PROPERTY')
         l15.grid(row = 10, column = 5, columnspan = 2)
         
+        # baud rate camera
         l16 = tkinter.Label(self, text='baud rate = ')
         l16.grid(row = 11, column = 5, columnspan = 1, sticky='E')
         self.cb16_value = tkinter.StringVar()
@@ -841,6 +857,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         self.cb16 = tkinter.ttk.Combobox(self, textvariable = self.cb16_value, postcommand = lambda : self.update_br(self.cb16))
         self.cb16.grid(row = 11, column = 6, sticky='WE')
         self.cb16.bind("<<ComboboxSelected>>", self.newselection_cb16)
+        
         
         self.update_button = ttk.Button(self, text="Update", command=self.update_var)
         self.update_button.grid(row=29, column=0, columnspan=10, sticky='NSWE')
@@ -952,7 +969,8 @@ class TakeDialog(tkinter.Toplevel):
         options['initialdir'] = self.pattern_dir
         options['mustexist'] = False
 
-        self.parent.withdraw()
+        if self.parent:
+            self.parent.withdraw()
         self.protocol("WM_DELETE_WINDOW", self.q)
         self.initialize()
         self.i=0
@@ -1065,7 +1083,8 @@ class TakeDialog(tkinter.Toplevel):
         
         # display the menu
         self.config(menu=menubar)
-        self.geometry("+%d+%d" % (self.parent.winfo_rootx()+50,
+        if self.parent:
+            self.geometry("+%d+%d" % (self.parent.winfo_rootx()+50,
                                   self.parent.winfo_rooty()+50))
         
         
