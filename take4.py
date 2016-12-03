@@ -841,7 +841,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l11 = tkinter.Label(self, text='TABLE SERIAL PROPERTY')
         l11.grid(row = 10, column = 0, columnspan = 2)
         
-        # baud rate table
+        # baud rate table device
         l12 = tkinter.Label(self, text='baud rate = ')
         l12.grid(row = 11, column = 0, columnspan = 1, sticky='E')
         self.cb12_value = tkinter.StringVar()
@@ -856,7 +856,7 @@ class Preferences_Dialog(tkinter.Toplevel):
         l15 = tkinter.Label(self, text = 'CAMERA SERIAL PROPERTY')
         l15.grid(row = 10, column = 5, columnspan = 2)
         
-        # baud rate camera
+        # baud rate camera device
         l16 = tkinter.Label(self, text='baud rate = ')
         l16.grid(row = 11, column = 5, columnspan = 1, sticky='E')
         self.cb16_value = tkinter.StringVar()
@@ -967,7 +967,7 @@ class Preferences_Dialog(tkinter.Toplevel):
                 elif n == 1:
                     self.parent.set_pattern_dir(os.path.abspath(new_path))
     def update_var(self):
-        pass1
+        pass
         
     def update_br(self, cb_br):
         cb_br['values'] = self.br_list
@@ -1125,7 +1125,7 @@ class TakeDialog(tkinter.Toplevel):
         self.pattern_dir = '~'
         self.pattern_files=[]
         self.dir_opt = options = {}
-        self.save_dir = '.'
+        self.save_dir = ''
         
         
         
@@ -1445,6 +1445,7 @@ class TakeDialog(tkinter.Toplevel):
     def Take(self):
         if Ask_scan_name(self):
             tkinter.messagebox.showinfo('Message', 'Scan data will be put in'+self.acq_img_dir+self.save_dir+' !')
+            
             os.mkdir(os.path.abspath(self.acq_img_dir+self.save_dir))
             proc = multiprocessing.Process(target=self.DoTake)
             process_window = ProcessWindow(self, proc, self.S_deg)
@@ -1498,56 +1499,79 @@ class TakeDialog(tkinter.Toplevel):
                 else:
                     self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
                     if self.CL:
-                        self.ask_images(self.CL, 0, i)
+                        #print("prendo le foto da sinistra")
+                        self.ask_images(self.CL, False, n)
                     if self.CR:
-                        self.ask_images(self.CR, 1, i)
+                        #print("prendo le foto da destra")
+                        self.ask_images(self.CR, True, n)
                     self.check_stepper_position(i)
                     time.sleep(0.5)
 
     def ask_images(self, camera, LR, i):
+        #print("camera = " , camera)
+        #print("LR = " , LR)
+        #print("i = " , i)
+        #print("---------")
         ask_proc = multiprocessing.Process(target=self.ask_images_and_save(camera, LR, i))
         process_class= Retrieve_image(self, ask_proc, camera, LR, i)
         process_class.launch()
         
     def from_int_to_camera_file(self, LR, n):
-        if LR == 0:
+        if LR == False:
+            #print("nome file = ",str(self.preL+str(n).rjust(4,'0')+self.extensionL))
             return str(self.preL+str(n).rjust(4,'0')+self.extensionL)
-        elif LR == 1:
+        elif LR == True:
             return str(self.preR+str(n).rjust(4,'0')+self.extensionR)
         else:
             tkinter.messagebox.showinfo("Warning", 'Camera not found!')
             
     def from_int_to_dest_file(self, LR, n, deg):
-        if LR == 0:
+        if LR == False:
             return str(self.preL+str(n).rjust(4,'0')+'_'+str(deg)+'_left'+self.extensionL)
-        elif LR == 1:
+        elif LR == True:
             return str(self.preR+str(n).rjust(4,'0')+'_'+str(deg)+'_right'+self.extensionR)
         else:
             tkinter.messagebox.showinfo("Warning", 'Camera not found!')
         
     def ask_images_and_save(self,camera, LR, i):
+        #print("camera = " , camera)
+        #print("LR = " , LR)
+        #print("i = " , i)
+        
+        
+        
         if i==0:
-            if LR == 0:
+            if LR == False:
+                #print("dentro sx")
                 self.nL = self.get_last_image_number_and_name(camera)[0]
-            if LR == 1:
+            if LR == True:
+                #print("dentro dx")
                 self.nR = self.get_last_image_number_and_name(camera)[0]
-        if LR == 0:
-            with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL), \
-                                    "--filename="+self.save_dir+'/'+self.from_int_to_dest_file(LR, self.nL, i)], stdout=subprocess.PIPE):
-                #self.nL+=1
-                pass
+        if LR == False:
+            #print("numero left =", self.nL)
+            
+            #print("taking image from  "+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL))
+            #print("saving image to    "+self.save_dir+'/'+self.from_int_to_dest_file(LR, self.nL, i))
+            print("gphoto2 --port="+camera['port']+" --get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL)+"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nL, i))
+            #with subprocess.Popen(["gphoto2", " --port="+camera['port'], " --get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL), \
+            #                        " --filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nL, i)], stdout=subprocess.PIPE):
+            with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL),"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nL, i)]):
+                self.nL+=1
+                #pass
         else:  
-            with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathR+'/'+self.from_int_to_camera_file(LR, self.nR), \
-                                    "--filename="+self.save_dir+'/'+self.from_int_to_dest_file(LR, self.nR, i)], stdout=subprocess.PIPE):
-                #self.nR+=1
-                pass
+            #print("numero right =", self.nR)
+            with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathR+'/'+self.from_int_to_camera_file(LR, self.nR),"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nR, i)]):
+                self.nR+=1
+                #pass
         #return True
         #print(camera)
     def return_pre_and_ext(self):
         return self.preL, self.preR, self.extensionL, self.extensionR
     
     def get_last_image_number_and_name(self, camera):
+        #print("get_last_image_number_and_name")
         if camera!=None:
+            #print("camera ok")
             proc = subprocess.Popen(["gphoto2", "--port="+camera['port'], "--list-files"], stdout=subprocess.PIPE)
 
             #with open('t.txt','w') as f:
