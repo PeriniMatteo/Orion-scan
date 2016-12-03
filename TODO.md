@@ -3,6 +3,7 @@
 - [ ] Use variable "pre" and "extension" to compone the right file name
 - [ ] Control when "if self.CL" or "if self.CR" is called (parameters window) but camere has been removed
 - [ ] Customize the arduino (for camera) code to send a custom delay 
+- [ ] Solve a bug when you want take only a picture
 
 - [x] <del>There is a bug in Add/remove cameras to be solved</del>
 - [x] <del>Camera identification (like serial)</del>
