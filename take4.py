@@ -1098,6 +1098,55 @@ class Ask_scan_name(tkinter.Toplevel):
     def quit(self):
         self.parent.focus_set()
         self.destroy()
+        
+class About_Dialog(tkinter.Toplevel):
+
+    def __init__(self, parent):
+
+        tkinter.Toplevel.__init__(self, parent)
+        self.transient(parent)
+        self.title('About Orion-Scan')
+        self.parent = parent
+        self.grid_columnconfigure(0,weight=1)
+        self.grid_rowconfigure(0,weight=1)
+        self.grid_rowconfigure(1,weight=1)
+        self.grid_rowconfigure(2,weight=1)
+        
+        tl0 = "\nOrion Scan is a Rotating Table, Arduino/Raspberry based, 3D Scanner developed in python3 and tk.\n \
+               This is an open-source project under GPL licence.\n \
+               For more details please visit:\n \
+               https://github.com/PeriniMatteo/Orion-scan\n\n"
+               
+        l0=tkinter.Label(self, text=tl0)
+        l0.grid(row=1, column=0)
+        L=Image.open("logo.jpg")
+        LL=ImageTk.PhotoImage(L)
+        l=tkinter.Label(self, image= LL)
+        l.grid(row=2, column=0)
+        tl2 = "\nContributors:\n\n \
+                    Fabio Menna\n \
+                    Erica Nocerino\n \
+                    Matteo Perini\n \
+                    Fabio Remondino\n \
+                    Matthew Luke Vincent\n"
+                    
+        l2=tkinter.Label(self, text=tl2)
+        l2.grid(row=3, column=0)
+        
+        self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
+        self.exit_button.grid(row=4, column=0, sticky='NSWE')
+        self.grab_set()
+
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+        self.focus_set()
+        self.minsize(400,150)
+        self.wait_window(self)
+
+    def cancel(self, event=None):
+        self.parent.focus_set()
+        self.destroy()
 
 class TakeDialog(tkinter.Toplevel):
     def __init__(self,parent):
@@ -1377,8 +1426,9 @@ class TakeDialog(tkinter.Toplevel):
     #def hello(self):
     #    print('Hello!!')
     def about(self):
-        tkinter.messagebox.showinfo("About", "Orion Scan is a open-source project under GPL licence.\nFor more details please visit:\nhttps://github.com/PeriniMatteo/Orion-scan")
-        
+        #tkinter.messagebox.showinfo("About", "Orion Scan is a open-source project under GPL licence.\nFor more details please visit:\nhttps://github.com/PeriniMatteo/Orion-scan")
+        About_Dialog(self)
+    
     def new_device(self):
         New_Device_Dialog(self)
         
