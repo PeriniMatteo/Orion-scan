@@ -1207,10 +1207,10 @@ class TakeDialog(tkinter.Toplevel):
         self.cb_rolling = tkinter.Checkbutton(self,text=u"Enable Turning Table",variable=self.table)
         self.cb_rolling.grid(column=0,row=2,columnspan=2,sticky='W')
         self.camera1=tkinter.IntVar()
-        self.cb_camera1 = tkinter.Checkbutton(self,text=u"Enable Camera1",variable=self.camera1)
+        self.cb_camera1 = tkinter.Checkbutton(self,text=u"Enable Camera1",variable=self.camera1,command=self.check_camera1)
         self.cb_camera1.grid(column=0,row=5,columnspan=2,sticky='W')
         self.camera2=tkinter.IntVar()
-        self.cb_camera2 = tkinter.Checkbutton(self,text=u"Enable Camera2",variable=self.camera2)
+        self.cb_camera2 = tkinter.Checkbutton(self,text=u"Enable Camera2",variable=self.camera2,command=self.check_camera2)
         self.cb_camera2.grid(column=0,row=6,columnspan=2,sticky='W')
         self.flash=tkinter.IntVar()
         self.cb_flash = tkinter.Checkbutton(self,text=u"Enable External Flash",variable=self.flash)
@@ -1290,13 +1290,13 @@ class TakeDialog(tkinter.Toplevel):
         #combo camera left
         self.cbl_value = tkinter.StringVar()
         self.cbl_value.set('not set!')
-        self.cbl = tkinter.ttk.Combobox(self, textvariable=self.cbl_value, postcommand = self.get_cam_int)
+        self.cbl = tkinter.ttk.Combobox(self, textvariable=self.cbl_value, postcommand = self.get_cam_int, state=tkinter.DISABLED)
         self.cbl.grid(column=2,row=6, sticky='NSWE')
         self.cbl.bind("<<ComboboxSelected>>", self.newselection_usb_left)
         #combo camera right
         self.cbr_value = tkinter.StringVar()
         self.cbr_value.set('not set!')
-        self.cbr = tkinter.ttk.Combobox(self, textvariable=self.cbr_value, postcommand = self.get_cam_int)
+        self.cbr = tkinter.ttk.Combobox(self, textvariable=self.cbr_value, postcommand = self.get_cam_int, state=tkinter.DISABLED)
         self.cbr.grid(column=3,row=6, sticky='NSWE')
         self.cbr.bind("<<ComboboxSelected>>", self.newselection_usb_right)
         
@@ -1310,7 +1310,27 @@ class TakeDialog(tkinter.Toplevel):
         
         ##Update window
         self.update()
-    
+        
+    def check_camera1(self):
+        if self.camera2.get():
+            self.cb_camera2.deselect()
+        if self.camera1.get():
+            self.cbl.config(state=tkinter.ACTIVE)
+        else:
+            self.cbl.config(state=tkinter.DISABLED)
+            self.check_camera2()
+            
+            
+    def check_camera2(self):
+        if self.camera2.get():
+            self.cbr.config(state=tkinter.ACTIVE)
+            if not self.camera1.get():
+                self.cb_camera1.select()
+                self.check_camera1() 
+        else:
+            self.cbr.config(state=tkinter.DISABLED)
+
+                
     def view_pattern_image(self):
         self.open_win_proj()
         if self.proj.get():
@@ -1366,8 +1386,13 @@ class TakeDialog(tkinter.Toplevel):
         New_Camera_Dialog(self)
         
     def camera_utility(self):
-        Check_Cameras_Dialog(self, self.CL, self.CR)
-        
+        if self.camera1.get():
+            if self.CL == None:
+                tkinter.messagebox.showinfo("Setup Cameras!", "Cameras are enabled but not properly set!",icon="warning")
+            else:
+                Check_Cameras_Dialog(self, self.CL, self.CR)
+        else:
+            tkinter.messagebox.showinfo("Setup Cameras!", "At least one camera must be activated!",icon="warning")
     def check_pattern_dir(self):
         n=0
         self.pattern_files=[]
@@ -1489,36 +1514,29 @@ class TakeDialog(tkinter.Toplevel):
                     self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
                     self.S_deg.write("$1=1\r\n".encode('ascii'))
                     self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
+                    if self.CL:
+                        self.ask_images(self.CL, False, n) 
+                    if self.CR:
+                        self.ask_images(self.CR, True, n)
                     self.check_stepper_position(i)
-                    #if self.CL:
-                    #    self.ask_images(self.CL, 0)
-                    #if self.CR:
-                    #    self.ask_images(self.CR, 1)
                     self.S_deg.write("G92 Z0\r\n".encode('ascii'))
                     time.sleep(0.5)
                 else:
                     self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
                     if self.CL:
-                        #print("prendo le foto da sinistra")
                         self.ask_images(self.CL, False, n)
                     if self.CR:
-                        #print("prendo le foto da destra")
                         self.ask_images(self.CR, True, n)
                     self.check_stepper_position(i)
                     time.sleep(0.5)
 
     def ask_images(self, camera, LR, i):
-        #print("camera = " , camera)
-        #print("LR = " , LR)
-        #print("i = " , i)
-        #print("---------")
         ask_proc = multiprocessing.Process(target=self.ask_images_and_save(camera, LR, i))
         process_class= Retrieve_image(self, ask_proc, camera, LR, i)
         process_class.launch()
         
     def from_int_to_camera_file(self, LR, n):
         if LR == False:
-            #print("nome file = ",str(self.preL+str(n).rjust(4,'0')+self.extensionL))
             return str(self.preL+str(n).rjust(4,'0')+self.extensionL)
         elif LR == True:
             return str(self.preR+str(n).rjust(4,'0')+self.extensionR)
@@ -1534,37 +1552,18 @@ class TakeDialog(tkinter.Toplevel):
             tkinter.messagebox.showinfo("Warning", 'Camera not found!')
         
     def ask_images_and_save(self,camera, LR, i):
-        #print("camera = " , camera)
-        #print("LR = " , LR)
-        #print("i = " , i)
-        
-        
-        
         if i==0:
             if LR == False:
-                #print("dentro sx")
                 self.nL = self.get_last_image_number_and_name(camera)[0]
             if LR == True:
-                #print("dentro dx")
                 self.nR = self.get_last_image_number_and_name(camera)[0]
         if LR == False:
-            #print("numero left =", self.nL)
-            
-            #print("taking image from  "+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL))
-            #print("saving image to    "+self.save_dir+'/'+self.from_int_to_dest_file(LR, self.nL, i))
-            print("gphoto2 --port="+camera['port']+" --get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL)+"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nL, i))
-            #with subprocess.Popen(["gphoto2", " --port="+camera['port'], " --get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL), \
-            #                        " --filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nL, i)], stdout=subprocess.PIPE):
-            with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL),"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nL, i)]):
+            with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL),"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nL, i*int(self.n_deg))]):
                 self.nL+=1
-                #pass
         else:  
-            #print("numero right =", self.nR)
-            with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathR+'/'+self.from_int_to_camera_file(LR, self.nR),"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nR, i)]):
+            with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathR+'/'+self.from_int_to_camera_file(LR, self.nR),"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nR, i*int(self.n_deg))]):
                 self.nR+=1
-                #pass
-        #return True
-        #print(camera)
+                
     def return_pre_and_ext(self):
         return self.preL, self.preR, self.extensionL, self.extensionR
     
