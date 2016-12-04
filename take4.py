@@ -1148,6 +1148,49 @@ class About_Dialog(tkinter.Toplevel):
         self.parent.focus_set()
         self.destroy()
 
+
+class License_Dialog(tkinter.Toplevel):
+
+    def __init__(self, parent):
+
+        tkinter.Toplevel.__init__(self, parent)
+        self.transient(parent)
+        self.title('License')
+        self.parent = parent
+        self.grid_columnconfigure(0,weight=1)
+        self.grid_rowconfigure(0,weight=1)
+        with open('LICENSE', 'r') as l:
+            t=l.readlines()
+        t = ''.join(t)
+        #txt = tkinter.StringVar(value=t)
+
+        #f = ttk.Frame(self)
+        #e = ttk.Entry(f, textvariable=txt, state='readonly')
+        self.e = tkinter.Text(self, height=40,width=73)
+        self.s = ttk.Scrollbar(self.e)
+        print("arrivo1")
+        self.e.configure(yscrollcommand=self.s.set)
+        self.e.insert("end", t)
+        
+        self.e.grid(row=1, column=0)
+        print("arrivo2")
+        self.exit_button = ttk.Button(self, text="Exit", command=self.cancel)
+        self.exit_button.grid(row=4, column=0, sticky='NSWE')
+        self.grab_set()
+
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        self.geometry("+%d+%d" % (parent.winfo_rootx()+50,
+                                  parent.winfo_rooty()+50))
+        self.focus_set()
+        self.minsize(400,150)
+        self.wait_window(self)
+
+    def cancel(self, event=None):
+        self.parent.focus_set()
+        self.destroy()
+
+
+
 class TakeDialog(tkinter.Toplevel):
     def __init__(self,parent):
         tkinter.Toplevel.__init__(self)
@@ -1291,6 +1334,7 @@ class TakeDialog(tkinter.Toplevel):
         menubar.add_cascade(label="Utility", menu=editmenu)
         
         helpmenu = tkinter.Menu(menubar, tearoff=0)
+        helpmenu.add_command(label="License", command=self.license)
         helpmenu.add_command(label="About", command=self.about)
         menubar.add_cascade(label="Help", menu=helpmenu)
         
@@ -1299,10 +1343,6 @@ class TakeDialog(tkinter.Toplevel):
         if self.parent:
             self.geometry("+%d+%d" % (self.parent.winfo_rootx()+50,
                                   self.parent.winfo_rooty()+50))
-        
-        
-        
-        
         
         for i in range(12):
             self.grid_columnconfigure(i,weight=1)
@@ -1422,13 +1462,14 @@ class TakeDialog(tkinter.Toplevel):
     
     def preferences(self):
         Preferences_Dialog(self, self.CL, self.CR)
-    
-    #def hello(self):
-    #    print('Hello!!')
+
     def about(self):
         #tkinter.messagebox.showinfo("About", "Orion Scan is a open-source project under GPL licence.\nFor more details please visit:\nhttps://github.com/PeriniMatteo/Orion-scan")
         About_Dialog(self)
-    
+        
+    def license(self):
+        License_Dialog(self)
+        
     def new_device(self):
         New_Device_Dialog(self)
         
