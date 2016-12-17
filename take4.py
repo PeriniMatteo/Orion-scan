@@ -569,7 +569,7 @@ class ProcessWindow(tkinter.Toplevel):
 
 
 class Retrieve_image():
-    def __init__(self, parent, process, camera, LR, i):
+    def __init__(self, parent, process, camera, LR, i, patt = None):
         self.process = process
         self.camera = camera
 
@@ -1577,54 +1577,70 @@ class TakeDialog(tkinter.Toplevel):
             self.S_deg.write("$1=255\r\n".encode('ascii'))
             self.S_deg.write("G92 Z0\r\n".encode('ascii'))
         for n,i in enumerate(list(range(int(self.n_deg),360+int(self.n_deg),int(self.n_deg)))):
-            if self.camera1.get():
-                if self.proj.get():
-                    for pattern in self.pattern_files:
+            if self.camera1.get() or self.camera2.get(): #if camera 1 or 2 are enabled
+                if self.proj.get(): #if projector is enabled 
+                    for k, pattern in enumerate(self.pattern_files): # for each pattern
                         self.show_image(self.pattern_dir+'/'+pattern)
                         time.sleep(0.2)
-                        if self.flash.get():
+                        if self.flash.get(): # if flash is enabled
                             self.S_shot.write(str('xxx 2\n').encode('ascii'))
                             self.check_camera_process()
                             self.destroy_image()
-                        else:
+                            self.call_ask_images(n, k)
+                        else:  # if flash isn't enabled
                             self.S_shot.write(str('xxx 1\n').encode('ascii'))
                             self.check_camera_process()
                             self.destroy_image()
-                else:
-                    if self.flash.get():
+                            self.call_ask_images(n, k)
+                else: # if projector is not enabled
+                    if self.flash.get(): # with flash
                         self.S_shot.write(str('xxx 2\n').encode('ascii'))
                         self.check_camera_process()
-                    else:
+                        self.call_ask_images(n)
+                    else:  # without flash
                         self.S_shot.write(str('xxx 1\n').encode('ascii'))
                         self.check_camera_process()
+                        self.call_ask_images(n)
                     
-            time.sleep(2)
-            if self.table.get():
+            time.sleep(0.5)  
+            if self.table.get(): #if the rotating table is enabled
                 if i==360:
                     
                     self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
                     self.S_deg.write("$1=1\r\n".encode('ascii'))
                     self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
-                    if self.CL:
-                        self.ask_images(self.CL, False, n) 
-                    if self.CR:
-                        self.ask_images(self.CR, True, n)
                     self.check_stepper_position(i)
                     self.S_deg.write("G92 Z0\r\n".encode('ascii'))
                     time.sleep(0.5)
                 else:
                     self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
-                    if self.CL:
-                        self.ask_images(self.CL, False, n)
-                    if self.CR:
-                        self.ask_images(self.CR, True, n)
                     self.check_stepper_position(i)
                     time.sleep(0.5)
+    
+    def call_ask_images(self, n , patt=None):
 
-    def ask_images(self, camera, LR, i):
-        ask_proc = multiprocessing.Process(target=self.ask_images_and_save(camera, LR, i))
-        process_class= Retrieve_image(self, ask_proc, camera, LR, i)
-        process_class.launch()
+        if self.camera1.get():
+            if self.CL:
+                if patt != None:
+                    self.ask_images(self.CL, False, n ,patt)
+                else:
+                    self.ask_images(self.CL, False, n)
+        if self.camera2.get():
+            if self.CR:
+                if patt != None:
+                    self.ask_images(self.CR, True, n, patt)
+                else:
+                    self.ask_images(self.CR, True, n)
+
+    def ask_images(self, camera, LR, i, patt = None):
+        if patt != None:
+            ask_proc = multiprocessing.Process(target=self.ask_images_and_save(camera, LR, i, patt))
+            process_class= Retrieve_image(self, ask_proc, camera, LR, i, patt)
+            process_class.launch()
+        else:
+            ask_proc = multiprocessing.Process(target=self.ask_images_and_save(camera, LR, i))
+            process_class= Retrieve_image(self, ask_proc, camera, LR, i)
+            process_class.launch()
         
     def from_int_to_camera_file(self, LR, n):
         if LR == False:
@@ -1634,26 +1650,48 @@ class TakeDialog(tkinter.Toplevel):
         else:
             tkinter.messagebox.showinfo("Warning", 'Camera not found!')
             
-    def from_int_to_dest_file(self, LR, n, deg):
-        if LR == False:
-            return str(self.preL+str(n).rjust(4,'0')+'_'+str(deg)+'_left'+self.extensionL)
-        elif LR == True:
-            return str(self.preR+str(n).rjust(4,'0')+'_'+str(deg)+'_right'+self.extensionR)
-        else:
-            tkinter.messagebox.showinfo("Warning", 'Camera not found!')
-        
-    def ask_images_and_save(self,camera, LR, i):
-        if i==0:
+    def from_int_to_dest_file(self, LR, n, deg, patt=None):
+        if patt != None:
             if LR == False:
-                self.nL = self.get_last_image_number_and_name(camera)[0]
-            if LR == True:
-                self.nR = self.get_last_image_number_and_name(camera)[0]
-        if LR == False:
-            with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL),"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nL, i*int(self.n_deg))]):
-                self.nL+=1
-        else:  
-            with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathR+'/'+self.from_int_to_camera_file(LR, self.nR),"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nR, i*int(self.n_deg))]):
-                self.nR+=1
+                return str(self.preL+str(n).rjust(4,'0')+'_'+str(deg)+'_left_'+str(patt)+self.extensionL)
+            elif LR == True:
+                return str(self.preR+str(n).rjust(4,'0')+'_'+str(deg)+'_right_'+str(patt)+self.extensionR)
+            else:
+                tkinter.messagebox.showinfo("Warning", 'Camera not found!')
+        else:
+            if LR == False:
+                return str(self.preL+str(n).rjust(4,'0')+'_'+str(deg)+'_left'+self.extensionL)
+            elif LR == True:
+                return str(self.preR+str(n).rjust(4,'0')+'_'+str(deg)+'_right'+self.extensionR)
+            else:
+                tkinter.messagebox.showinfo("Warning", 'Camera not found!')
+        
+    def ask_images_and_save(self,camera, LR, i, patt = None):
+        time.sleep(1)  
+        if patt != None:
+            if i==0:
+                if LR == False:
+                    self.nL = self.get_last_image_number_and_name(camera)[0]
+                if LR == True:
+                    self.nR = self.get_last_image_number_and_name(camera)[0]
+            if LR == False:
+                with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL),"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nL, i*int(self.n_deg), patt)]):
+                    self.nL+=1
+            else:  
+                with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathR+'/'+self.from_int_to_camera_file(LR, self.nR),"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nR, i*int(self.n_deg), patt)]):
+                    self.nR+=1
+        else:
+            if i==0:
+                if LR == False:
+                    self.nL = self.get_last_image_number_and_name(camera)[0]
+                if LR == True:
+                    self.nR = self.get_last_image_number_and_name(camera)[0]
+            if LR == False:
+                with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathL+'/'+self.from_int_to_camera_file(LR, self.nL),"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nL, i*int(self.n_deg))]):
+                    self.nL+=1
+            else:  
+                with subprocess.Popen(["gphoto2", "--port="+camera['port'], "--get-file="+self.pathR+'/'+self.from_int_to_camera_file(LR, self.nR),"--filename="+os.path.abspath(self.acq_img_dir+self.save_dir)+'/'+self.from_int_to_dest_file(LR, self.nR, i*int(self.n_deg))]):
+                    self.nR+=1
                 
     def return_pre_and_ext(self):
         return self.preL, self.preR, self.extensionL, self.extensionR
