@@ -1,6 +1,8 @@
 - [p] Allow to customize parameters in a property windows
 - [ ] Control when "if self.CL" or "if self.CR" is called (parameters window) but camere has been removed
 - [ ] Customize the arduino (for camera) code to send a custom delay 
+- [ ] Correct a problem in downloading images when projector is enabled
+- [ ] Substitute G00 with G01 in gcode generation to allow a different feedrate
 
 - [x] <del>Use variable "pre" and "extension" to compone the right file name</del>
 - [x] <del>Download and organize pictures in the right folder</del>
