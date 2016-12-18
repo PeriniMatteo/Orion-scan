@@ -554,7 +554,7 @@ class ProcessWindow(tkinter.Toplevel):
         messagebox.showinfo(title="3D Scan Cancelled", message='Process was terminated from user')
         if messagebox.askyesno("Restore position?", "Come back to the 0 position?"):
             self.serial.write("$1=1\r\n".encode('ascii'))
-            self.serial.write("G01 Z0"+" F"+str(self.feedrate)+"\r\n".encode('ascii'))
+            self.serial.write("G01 Z0"+" F"+str(self.parent.feedrate)+"\r\n".encode('ascii'))
 
     def launch(self):
         self.process.start()
@@ -729,8 +729,10 @@ class Preferences_Dialog(tkinter.Toplevel):
         
         self.preL, self.preR, self.extensionL, self.extensionR = self.parent.return_pre_and_ext()
         self.br_list = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 74880, 115200, 230400, 250000]
+        self.fr_list = [10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200]
         self.pathL, self.pathR = self.parent.return_paths()
         self.br_deg, self.br_shot = self.parent.return_br()
+        self.fr = self.parent.return_feedrate()
         
         for i in range(6):
             self.grid_columnconfigure(i,weight=1)
@@ -913,13 +915,28 @@ class Preferences_Dialog(tkinter.Toplevel):
         b52 = ttk.Button(self, text="change", command=lambda : self.get_new_path(e52txt, 1))
         b52.grid(row=52, column=6, columnspan=2, sticky='NSWE')
         
+        ################# TABLE ROTATION SPEED #########################
+
+        self.s54 = tkinter.ttk.Separator(self, orient = 'horizontal')
+        self.s54.grid(column = 0,row = 54,columnspan = 10,sticky = 'WE')
+            
+        l55 = tkinter.Label(self, text='Turning speed')
+        l55.grid(row = 55, column = 0, columnspan = 1, sticky='E')
+        self.cb55_value = tkinter.StringVar()
+        self.cb55_value.set(self.fr)
+        self.cb55 = tkinter.ttk.Combobox(self, textvariable=self.cb55_value, postcommand = self.update_fr)
+        self.cb55.grid(column=1,row=55, columnspan = 5, sticky='WE')
+        self.cb55.bind("<<ComboboxSelected>>", self.get_new_fr)
+        
         ################## OTHER COMMANDS ##############################
         self.update_button = ttk.Button(self, text="Update", command=self.update_var)
         self.update_button.grid(row=79, column=0, columnspan=10, sticky='NSWE')
         self.exit_button = ttk.Button(self, text="Exit", command=self.quit_win)
         self.exit_button.grid(row=80, column=0, columnspan=10, sticky='NSWE')
 
-
+    def get_new_fr(self, evt):
+        self.fr = int(self.cb55.get())
+        self.parent.set_feedrate(self.fr)
             
     def get_pre_and_ext_from_camera(self, camera, e, n):
         if camera!=None:
@@ -971,6 +988,9 @@ class Preferences_Dialog(tkinter.Toplevel):
         
     def update_br(self, cb_br):
         cb_br['values'] = self.br_list
+
+    def update_fr(self,):
+        self.cb55['values'] = self.fr_list
         
     
     def set_variable(self, txt, n):
@@ -1218,7 +1238,7 @@ class TakeDialog(tkinter.Toplevel):
         self.pattern_files=[]
         self.dir_opt = options = {}
         self.save_dir = ''
-        self.feedrate = 20
+        self.feedrate = 40
         
         
         
@@ -2130,6 +2150,9 @@ class TakeDialog(tkinter.Toplevel):
     
     def return_paths(self):
         return self.pathL, self.pathR
+        
+    def return_feedrate(self):
+        return self.feedrate
     
     def set_pathL(self, txt):
         self.pathL = txt
@@ -2154,6 +2177,9 @@ class TakeDialog(tkinter.Toplevel):
         
     def set_pattern_dir(self,path):
         self.pattern_dir = path
+    
+    def set_feedrate(self,fr):
+        self.feedrate = fr
     
     def return_true(self):
         return True
