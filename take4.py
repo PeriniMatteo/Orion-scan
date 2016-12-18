@@ -554,7 +554,7 @@ class ProcessWindow(tkinter.Toplevel):
         messagebox.showinfo(title="3D Scan Cancelled", message='Process was terminated from user')
         if messagebox.askyesno("Restore position?", "Come back to the 0 position?"):
             self.serial.write("$1=1\r\n".encode('ascii'))
-            self.serial.write("G0 Z0\r\n".encode('ascii'))
+            self.serial.write("G01 Z0"+" F"+str(self.feedrate)+"\r\n".encode('ascii'))
 
     def launch(self):
         self.process.start()
@@ -1123,12 +1123,12 @@ class About_Dialog(tkinter.Toplevel):
         LL=ImageTk.PhotoImage(L)
         l=tkinter.Label(self, image= LL)
         l.grid(row=2, column=0)
-        tl2 = "\nContributors:\n\n \
-                    Fabio Menna\n \
-                    Erica Nocerino\n \
-                    Matteo Perini\n \
-                    Fabio Remondino\n \
-                    Matthew Luke Vincent\n"
+        tl2 = "\n\tContributors:\n\n \
+                Fabio Menna\n \
+                Erica Nocerino\n \
+                Matteo Perini\n \
+                Fabio Remondino\n \
+                Matthew Luke Vincent\n"
                     
         l2=tkinter.Label(self, text=tl2)
         l2.grid(row=3, column=0)
@@ -1218,6 +1218,7 @@ class TakeDialog(tkinter.Toplevel):
         self.pattern_files=[]
         self.dir_opt = options = {}
         self.save_dir = ''
+        self.feedrate = 20
         
         
         
@@ -1559,6 +1560,15 @@ class TakeDialog(tkinter.Toplevel):
         cv2.destroyAllWindows()
         
     def Take(self):
+        #if self.camera1.get():
+        #    if self.CL == None:
+        #        tkinter.messagebox.showinfo('Problem detected','Left camera is not properly set!')
+                
+        #if self.camera2.get():
+        #    if self.CR == None:
+        #        tkinter.messagebox.showinfo('Problem detected','Right camera is not properly set!')
+                
+                
         if Ask_scan_name(self):
             tkinter.messagebox.showinfo('Message', 'Scan data will be put in'+self.acq_img_dir+self.save_dir+' !')
             
@@ -1606,14 +1616,14 @@ class TakeDialog(tkinter.Toplevel):
             if self.table.get(): #if the rotating table is enabled
                 if i==360:
                     
-                    self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
+                    self.S_deg.write(str('G01 Z'+str(i/10.0)+" F"+str(self.feedrate)+'\r\n').encode('ascii'))
                     self.S_deg.write("$1=1\r\n".encode('ascii'))
-                    self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
+                    self.S_deg.write(str('G01 Z'+str(i/10.0)+" F"+str(self.feedrate)+'\r\n').encode('ascii'))
                     self.check_stepper_position(i)
                     self.S_deg.write("G92 Z0\r\n".encode('ascii'))
                     time.sleep(0.5)
                 else:
-                    self.S_deg.write(str('G0 Z'+str(i/10.0)+'\r\n').encode('ascii'))
+                    self.S_deg.write(str('G01 Z'+str(i/10.0)+" F"+str(self.feedrate)+'\r\n').encode('ascii'))
                     self.check_stepper_position(i)
                     time.sleep(0.5)
     
