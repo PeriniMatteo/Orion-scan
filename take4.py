@@ -1592,7 +1592,7 @@ class TakeDialog(tkinter.Toplevel):
         if Ask_scan_name(self):
             tkinter.messagebox.showinfo('Message', 'Scan data will be put in'+self.acq_img_dir+self.save_dir+' !')
             
-            os.mkdir(os.path.abspath(self.acq_img_dir+self.save_dir))
+            os.makedirs(os.path.abspath(self.acq_img_dir+self.save_dir))
             proc = multiprocessing.Process(target=self.DoTake)
             process_window = ProcessWindow(self, proc, self.S_deg)
             process_window.launch()

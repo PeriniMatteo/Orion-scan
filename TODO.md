@@ -3,8 +3,8 @@
 - [ ] Customize the arduino (for camera) code to send a custom delay 
 - [ ] Correct a problem in downloading images when projector is enabled
 - [ ] There is a bug when the sw try to read the directory tree from the cameras
-- [ ] Must create the folder acquired images
 
+- [x] <del>Must create the folder acquired images</del>
 - [x] <del>Substitute G00 with G01 in gcode generation to allow a different feedrate</del>
 - [x] <del>Use variable "pre" and "extension" to compone the right file name</del>
 - [x] <del>Download and organize pictures in the right folder</del>
