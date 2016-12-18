@@ -2,9 +2,10 @@
 - [ ] Control when "if self.CL" or "if self.CR" is called (parameters window) but camere has been removed
 - [ ] Customize the arduino (for camera) code to send a custom delay 
 - [ ] Correct a problem in downloading images when projector is enabled
-- [ ] Substitute G00 with G01 in gcode generation to allow a different feedrate
 - [ ] There is a bug when the sw try to read the directory tree from the cameras
+- [ ] Must create the folder acquired images
 
+- [x] <del>Substitute G00 with G01 in gcode generation to allow a different feedrate</del>
 - [x] <del>Use variable "pre" and "extension" to compone the right file name</del>
 - [x] <del>Download and organize pictures in the right folder</del>
 - [x] <del>Solve a bug when you want take only a picture</del>
